@@ -1,0 +1,323 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────
+
+enum UnitOfMeasure {
+  KG
+  LITRE
+  TON
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum CompanyType {
+  MANUFACTURER
+  SUPPLIER
+  BUYER
+  DISTRIBUTOR
+}
+
+enum RoleType {
+  MANUFACTURER
+  SUPPLIER
+  DISTRIBUTOR
+}
+
+enum ContactType {
+  BUYER
+  PURCHASE_MANAGER
+  SALES
+  ADMIN
+}
+
+enum PreferredLanguage {
+  ENGLISH
+  HINDI
+  REGIONAL
+}
+
+enum RoleName {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+}
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+}
+
+// ─── MASTER TABLES ───────────────────────────────────────
+
+model Category {
+  category_id   Int       @id @default(autoincrement())
+  category_name String    @unique
+  products      Product[]
+}
+
+model Grade {
+  grade_id   Int       @id @default(autoincrement())
+  grade_name String    @unique
+  products   Product[]
+}
+
+model Packaging {
+  packaging_id   Int       @id @default(autoincrement())
+  packaging_name String    @unique
+  size_unit      String
+  size_value     Decimal   @db.Decimal(10, 2)
+  products       Product[]
+}
+
+model Department {
+  department_id   Int    @id @default(autoincrement())
+  department_name String @unique
+  users           User[]
+}
+
+// ─── ROLES & PERMISSIONS ─────────────────────────────────
+
+model Role {
+  role_id     Int          @id @default(autoincrement())
+  role_name   RoleName     @unique
+  description String?
+  permissions Permission[]
+  users       User[]
+}
+
+model Permission {
+  permission_id Int     @id @default(autoincrement())
+  role_id       Int
+  module_name   String
+  can_view      Boolean @default(false)
+  can_create    Boolean @default(false)
+  can_edit      Boolean @default(false)
+  can_delete    Boolean @default(false)
+
+  role Role @relation(fields: [role_id], references: [role_id])
+
+  @@unique([role_id, module_name])
+}
+
+// ─── USERS ───────────────────────────────────────────────
+
+model User {
+  user_id       Int        @id @default(autoincrement())
+  name          String
+  email         String     @unique
+  mobile        String?
+  username      String     @unique
+  password_hash String
+  role_id       Int
+  department_id Int?
+  status        Status     @default(ACTIVE)
+  last_login_at DateTime?
+  created_at    DateTime   @default(now())
+
+  role             Role        @relation(fields: [role_id], references: [role_id])
+  department       Department? @relation(fields: [department_id], references: [department_id])
+  products_created Product[]   @relation("ProductCreatedBy")
+  products_updated Product[]   @relation("ProductUpdatedBy")
+  audit_logs       AuditLog[]
+
+  @@index([email])
+  @@index([username])
+}
+
+// ─── PRODUCTS ────────────────────────────────────────────
+
+model Product {
+  product_id           Int            @id @default(autoincrement())
+  product_name         String
+  sku                  String         @unique
+  composition          String?
+  category_id          Int?
+  grade_id             Int?
+  packaging_id         Int?
+  unit_of_measure      UnitOfMeasure?
+  shelf_life           String?
+  molecular_formula    String?
+  molecular_weight     Decimal?       @db.Decimal(10, 4)
+  purity               Decimal?       @db.Decimal(5, 2)
+  process_type         String?
+  un_number            String?
+  industry_application String?        @db.Text
+  hsn_code             String?
+  cas_number           String?        @unique
+  description          String?        @db.Text
+  status               Status         @default(ACTIVE)
+  created_by           Int?
+  created_at           DateTime       @default(now())
+  updated_by           Int?
+  updated_at           DateTime       @updatedAt
+
+  category  Category?               @relation(fields: [category_id], references: [category_id])
+  grade     Grade?                  @relation(fields: [grade_id], references: [grade_id])
+  packaging Packaging?              @relation(fields: [packaging_id], references: [packaging_id])
+  creator   User?                   @relation("ProductCreatedBy", fields: [created_by], references: [user_id])
+  updater   User?                   @relation("ProductUpdatedBy", fields: [updated_by], references: [user_id])
+  mappings  CompanyProductMapping[]
+  interests ContactProductInterest[]
+
+  @@index([product_name])
+  @@index([category_id])
+  @@index([grade_id])
+  @@index([status])
+  @@fulltext([description])
+}
+
+// ─── COMPANIES ───────────────────────────────────────────
+
+model Company {
+  company_id    Int         @id @default(autoincrement())
+  company_name  String
+  company_type  CompanyType
+  address       String?
+  email         String?
+  phone         String?
+  remarks       String?     @db.Text
+  gst_number    String?
+  pan_number    String?
+  cin_number    String?
+  website       String?
+  industry_type String?
+  status        Status      @default(ACTIVE)
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  branches Branch[]
+  contacts Contact[]
+  mappings CompanyProductMapping[]
+
+  @@index([company_type])
+  @@index([gst_number])
+  @@index([status])
+  @@fulltext([company_name])
+}
+
+model Branch {
+  branch_id      Int      @id @default(autoincrement())
+  company_id     Int
+  branch_name    String
+  gst_number     String?
+  pan_number     String?
+  address_line1  String?
+  address_line2  String?
+  city           String?
+  state          String?
+  pincode        String?
+  country        String?  @default("India")
+  contact_number String?
+  email          String?
+  latitude       Decimal? @db.Decimal(10, 8)
+  longitude      Decimal? @db.Decimal(11, 8)
+
+  company  Company   @relation(fields: [company_id], references: [company_id])
+  contacts Contact[]
+
+  @@index([city])
+  @@index([state])
+}
+
+// ─── COMPANY PRODUCT MAPPING ─────────────────────────────
+
+model CompanyProductMapping {
+  mapping_id      Int      @id @default(autoincrement())
+  company_id      Int
+  product_id      Int
+  role_type       RoleType
+  moq             Decimal? @db.Decimal(10, 2)
+  price_range_min Decimal? @db.Decimal(10, 2)
+  price_range_max Decimal? @db.Decimal(10, 2)
+  lead_time_days  Int?
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+
+  company Company @relation(fields: [company_id], references: [company_id])
+  product Product @relation(fields: [product_id], references: [product_id])
+
+  @@unique([company_id, product_id, role_type])
+  @@index([company_id])
+  @@index([product_id])
+}
+
+// ─── CONTACTS ────────────────────────────────────────────
+
+model Contact {
+  contact_id         Int                @id @default(autoincrement())
+  first_name         String
+  last_name          String?
+  mobile             String
+  alternate_mobile   String?
+  email              String?
+  company_id         Int?
+  branch_id          Int?
+  contact_type       ContactType?
+  designation        String?
+  preferred_language PreferredLanguage?
+  tags               String?            @db.Text
+  status             Status             @default(ACTIVE)
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+
+  company   Company? @relation(fields: [company_id], references: [company_id])
+  branch    Branch?  @relation(fields: [branch_id], references: [branch_id])
+  interests ContactProductInterest[]
+
+  @@index([mobile])
+  @@index([email])
+  @@index([contact_type])
+  @@index([preferred_language])
+  @@index([status])
+}
+
+// ─── CONTACT PRODUCT INTEREST ────────────────────────────
+
+model ContactProductInterest {
+  id         Int      @id @default(autoincrement())
+  contact_id Int
+  product_id Int
+  created_at DateTime @default(now())
+
+  contact Contact @relation(fields: [contact_id], references: [contact_id], onDelete: Cascade)
+  product Product @relation(fields: [product_id], references: [product_id])
+
+  @@unique([contact_id, product_id])
+  @@index([contact_id])
+  @@index([product_id])
+}
+
+// ─── AUDIT LOG ───────────────────────────────────────────
+
+model AuditLog {
+  log_id      Int        @id @default(autoincrement())
+  user_id     Int
+  module_name String
+  action_type ActionType
+  record_id   Int?
+  old_values  String?    @db.Text
+  new_values  String?    @db.Text
+  ip_address  String?
+  user_agent  String?
+  created_at  DateTime   @default(now())
+
+  user User @relation(fields: [user_id], references: [user_id])
+
+  @@index([module_name])
+  @@index([action_type])
+  @@index([created_at])
+  @@index([user_id])
+}
