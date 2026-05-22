@@ -8,8 +8,8 @@ const sendPaginated = (res, data, pagination) => {
     data,
     pagination: {
       ...pagination,
-      totalPages: Math.ceil(pagination.total / pagination.limit)
-    }
+      totalPages: Math.ceil(pagination.total / pagination.limit),
+    },
   });
 };
 

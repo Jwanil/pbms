@@ -11,10 +11,10 @@ const options = {
     servers: [{ url: '/api/v1', description: 'API v1' }],
     components: {
       securitySchemes: {
-        BearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
-      }
+        BearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      },
     },
-    security: [{ BearerAuth: [] }]
+    security: [{ BearerAuth: [] }],
   },
   apis: ['./src/routes/v1/*.js'],
 };

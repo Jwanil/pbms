@@ -25,3 +25,8 @@ Thumbs.db
 
 # Prisma
 *.db
+
+# Internal Agent & Planning Docs
+AGENTS.md
+directives/
+reports/

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
   console.error(`[ERROR] ${err.message}`, err.stack);
 
@@ -7,7 +8,7 @@ const errorHandler = (err, req, res, next) => {
       success: false,
       message: 'A record with this value already exists.',
       code: 'CONFLICT',
-      errors: []
+      errors: [],
     });
   }
 
@@ -17,7 +18,7 @@ const errorHandler = (err, req, res, next) => {
       success: false,
       message: 'Record not found.',
       code: 'NOT_FOUND',
-      errors: []
+      errors: [],
     });
   }
 
@@ -25,7 +26,7 @@ const errorHandler = (err, req, res, next) => {
     success: false,
     message: err.message || 'Internal server error',
     code: err.code || 'SERVER_ERROR',
-    errors: []
+    errors: [],
   });
 };
 
