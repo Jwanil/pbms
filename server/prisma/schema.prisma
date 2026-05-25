@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── ENUMS ───────────────────────────────────────────────
+// --- ENUMS ---
 
 enum UnitOfMeasure {
   KG
@@ -60,7 +60,7 @@ enum ActionType {
   LOGOUT
 }
 
-// ─── MASTER TABLES ───────────────────────────────────────
+// --- MASTER TABLES ---
 
 model Category {
   category_id   Int       @id @default(autoincrement())
@@ -88,7 +88,7 @@ model Department {
   users           User[]
 }
 
-// ─── ROLES & PERMISSIONS ─────────────────────────────────
+// --- ROLES & PERMISSIONS ---
 
 model Role {
   role_id     Int          @id @default(autoincrement())
@@ -112,7 +112,7 @@ model Permission {
   @@unique([role_id, module_name])
 }
 
-// ─── USERS ───────────────────────────────────────────────
+// --- USERS ---
 
 model User {
   user_id       Int        @id @default(autoincrement())
@@ -123,6 +123,7 @@ model User {
   password_hash String
   role_id       Int
   department_id Int?
+  refresh_token_hash String?    // nullable - null means logged out
   status        Status     @default(ACTIVE)
   last_login_at DateTime?
   created_at    DateTime   @default(now())
@@ -137,7 +138,7 @@ model User {
   @@index([username])
 }
 
-// ─── PRODUCTS ────────────────────────────────────────────
+// --- PRODUCTS ---
 
 model Product {
   product_id           Int            @id @default(autoincrement())
@@ -179,7 +180,7 @@ model Product {
   @@fulltext([description])
 }
 
-// ─── COMPANIES ───────────────────────────────────────────
+// --- COMPANIES ---
 
 model Company {
   company_id    Int         @id @default(autoincrement())
@@ -232,7 +233,7 @@ model Branch {
   @@index([state])
 }
 
-// ─── COMPANY PRODUCT MAPPING ─────────────────────────────
+// --- COMPANY PRODUCT MAPPING ---
 
 model CompanyProductMapping {
   mapping_id      Int      @id @default(autoincrement())
@@ -254,7 +255,7 @@ model CompanyProductMapping {
   @@index([product_id])
 }
 
-// ─── CONTACTS ────────────────────────────────────────────
+// --- CONTACTS ---
 
 model Contact {
   contact_id         Int                @id @default(autoincrement())
@@ -284,7 +285,7 @@ model Contact {
   @@index([status])
 }
 
-// ─── CONTACT PRODUCT INTEREST ────────────────────────────
+// --- CONTACT PRODUCT INTEREST ---
 
 model ContactProductInterest {
   id         Int      @id @default(autoincrement())
@@ -300,7 +301,7 @@ model ContactProductInterest {
   @@index([product_id])
 }
 
-// ─── AUDIT LOG ───────────────────────────────────────────
+// --- AUDIT LOG ---
 
 model AuditLog {
   log_id      Int        @id @default(autoincrement())
