@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const { errorHandler } = require('./middleware/errorHandler');
 const v1Routes = require('./routes/v1/index');
@@ -14,6 +15,9 @@ const app = express();
 
 // Security
 app.use(helmet());
+
+// Cookie parser - required for refresh token cookies
+app.use(cookieParser());
 
 // CORS
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
@@ -31,7 +35,7 @@ app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // API v1 routes
 app.use('/api/v1', v1Routes);
 
-// Global error handler — must be last
+// Global error handler - must be last
 app.use(errorHandler);
 
 module.exports = app;
