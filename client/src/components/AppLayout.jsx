@@ -8,6 +8,7 @@ import {
   MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined,
 } from '@ant-design/icons';
 import useAuthStore from '../store/authStore';
+import { useLogout } from '../api/authApi';
 
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
@@ -37,17 +38,23 @@ function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, clearAuth } = useAuthStore();
+  const { user } = useAuthStore();
+  const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
   const handleMenuClick = ({ key }) => navigate(key);
 
   const handleLogout = () => {
-    clearAuth();
-    navigate('/login');
+    logout();
   };
 
   const userMenuItems = [
-    { key: 'logout', icon: <LogoutOutlined />, label: 'Logout', onClick: handleLogout },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: isLoggingOut ? 'Logging out...' : 'Logout',
+      onClick: handleLogout,
+      disabled: isLoggingOut,
+    },
   ];
 
   return (
@@ -99,7 +106,12 @@ function AppLayout() {
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']}>
             <Space style={{ cursor: 'pointer' }}>
               <Avatar style={{ backgroundColor: '#1F3A6E' }} icon={<UserOutlined />} />
-              <Text strong>{user?.name || 'User'}</Text>
+              <div style={{ lineHeight: 1.3 }}>
+                <Text strong>{user?.name || 'User'}</Text>
+                <Text type="secondary" style={{ fontSize: 11, display: 'block', lineHeight: 1 }}>
+                  {user?.role || ''}
+                </Text>
+              </div>
               <DownOutlined style={{ fontSize: 11 }} />
             </Space>
           </Dropdown>
