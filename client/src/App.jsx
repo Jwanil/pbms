@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import AppLayout from './components/AppLayout';
+import { useRevalidateSession } from './api/authApi';
 
 import LoginPage from './pages/auth/LoginPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
@@ -17,6 +18,9 @@ import UsersPage from './pages/users/UsersPage';
 import RolesPage from './pages/roles/RolesPage';
 
 function App() {
+  // Revalidate session on every app load
+  useRevalidateSession();
+
   return (
     <Routes>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
