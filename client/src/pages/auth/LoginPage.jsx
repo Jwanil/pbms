@@ -1,13 +1,23 @@
-import { Form, Input, Button, Card, Typography, Space } from 'antd';
+import { Form, Input, Button, Card, Typography, Space, Alert } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { useLogin } from '../../api/authApi';
 
 const { Title, Text } = Typography;
 
 function LoginPage() {
   const [form] = Form.useForm();
+  const { mutate: login, isPending, error, isError } = useLogin();
 
   const handleSubmit = (values) => {
-    console.log('Login submitted — Phase 2 will handle this:', values);
+    login({ email: values.email, password: values.password });
+  };
+
+  const getErrorMessage = () => {
+    const code = error?.response?.data?.code;
+    if (code === 'INVALID_CREDENTIALS') return 'Incorrect email or password.';
+    if (code === 'ACCOUNT_INACTIVE') return 'Your account has been deactivated. Contact an administrator.';
+    if (code === 'RATE_LIMITED') return 'Too many login attempts. Please wait 15 minutes.';
+    return 'Something went wrong. Please try again.';
   };
 
   return (
@@ -27,7 +37,22 @@ function LoginPage() {
           <Text type="secondary">Product & Buyer Management System</Text>
         </Space>
 
-        <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" size="large">
+        {isError && (
+          <Alert
+            message={getErrorMessage()}
+            type="error"
+            showIcon
+            style={{ marginBottom: 20 }}
+          />
+        )}
+
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          autoComplete="off"
+          size="large"
+        >
           <Form.Item
             name="email"
             label="Email"
@@ -36,7 +61,11 @@ function LoginPage() {
               { type: 'email', message: 'Please enter a valid email' },
             ]}
           >
-            <Input prefix={<UserOutlined />} placeholder="admin@pbms.com" />
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="admin@pbms.com"
+              disabled={isPending}
+            />
           </Form.Item>
 
           <Form.Item
@@ -44,12 +73,22 @@ function LoginPage() {
             label="Password"
             rules={[{ required: true, message: 'Please enter your password' }]}
           >
-            <Input.Password prefix={<LockOutlined />} placeholder="Enter password" />
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Enter password"
+              disabled={isPending}
+            />
           </Form.Item>
 
           <Form.Item style={{ marginBottom: 0, marginTop: 8 }}>
-            <Button type="primary" htmlType="submit" block style={{ height: 44, background: '#1F3A6E' }}>
-              Sign In
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              loading={isPending}
+              style={{ height: 44, background: '#1F3A6E' }}
+            >
+              {isPending ? 'Signing in...' : 'Sign In'}
             </Button>
           </Form.Item>
         </Form>
