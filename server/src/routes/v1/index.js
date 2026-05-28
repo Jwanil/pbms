@@ -6,6 +6,7 @@ const categoriesRouter = require('./categories');
 const gradesRouter = require('./grades');
 const packagingRouter = require('./packaging');
 const departmentsRouter = require('./departments');
+const rolesRouter = require('./roles');
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/categories', categoriesRouter);
 router.use('/grades', gradesRouter);
 router.use('/packaging', packagingRouter);
 router.use('/departments', departmentsRouter);
+router.use('/roles', rolesRouter);
 
 module.exports = router;
