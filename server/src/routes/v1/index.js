@@ -7,6 +7,7 @@ const gradesRouter = require('./grades');
 const packagingRouter = require('./packaging');
 const departmentsRouter = require('./departments');
 const rolesRouter = require('./roles');
+const productsRouter = require('./products');
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/grades', gradesRouter);
 router.use('/packaging', packagingRouter);
 router.use('/departments', departmentsRouter);
 router.use('/roles', rolesRouter);
+router.use('/products', productsRouter);
 
 module.exports = router;
