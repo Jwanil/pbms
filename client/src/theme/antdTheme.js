@@ -16,6 +16,7 @@ const antdTheme = {
     },
     Menu: {
       darkItemBg: '#1F3A6E',
+      darkSubMenuItemBg: '#162d57',
       darkItemSelectedBg: '#2E75B6',
       darkItemHoverBg: '#162d57',
     },
