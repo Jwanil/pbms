@@ -82,7 +82,7 @@ function CompaniesPage() {
     { title: 'Branches', key: 'branches', width: 80, align: 'center', render: (_, r) => r._count?.branches || 0 },
     { title: 'Status', key: 'status', width: 100, render: (_, r) => <StatusBadge status={r.status} /> },
     {
-      title: 'Actions', key: 'actions', width: 200, fixed: 'right',
+      title: 'Actions', key: 'actions', width: 200,
       render: (_, record) => (
         <Space>
           <PermissionGuard module="companies" action="can_edit">
@@ -204,7 +204,7 @@ function CompaniesPage() {
           current: page, total: listData?.pagination?.total || 0, pageSize: 20,
           showSizeChanger: false, showTotal: (t) => `Total ${t} companies`, onChange: setPage,
         }}
-        scroll={{ x: 'max-content' }} size="middle"
+        size="middle"
       />
 
       <FormModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingId(null); }}
