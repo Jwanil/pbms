@@ -27,7 +27,7 @@ async function main() {
 
   // ── 2. Permissions Matrix ─────────────────────────────
   const modules = [
-    'products', 'companies', 'company_product_mapping',
+    'products', 'companies', 'mappings',
     'contacts', 'packaging', 'categories', 'departments',
     'grades', 'users', 'roles', 'dashboard'
   ];
