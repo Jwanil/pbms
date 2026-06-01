@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import api from './axiosInstance';
 import useAuthStore from '../store/authStore';
 
@@ -52,13 +52,20 @@ export const useRevalidateSession = () => {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const token = useAuthStore((state) => state.token);
 
+  // Track the initial auth state at mount time.
+  // If auth was already true when the component first mounted (i.e. page refresh
+  // with persisted Zustand state), we revalidate. If auth was false at mount
+  // (fresh visit) and became true later (login mutation), we skip revalidation
+  // because the login response already provided fresh data.
+  const wasAuthenticatedAtMount = useRef(isAuthenticated);
+
   const query = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: async () => {
       const res = await api.get('/auth/me');
       return res.data.data; // { user, permissions }
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && wasAuthenticatedAtMount.current,
     retry: false,
   });
 
