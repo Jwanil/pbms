@@ -9,6 +9,7 @@ const departmentsRouter = require('./departments');
 const rolesRouter = require('./roles');
 const productsRouter = require('./products');
 const companiesRouter = require('./companies');
+const mappingsRouter = require('./mappings');
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/departments', departmentsRouter);
 router.use('/roles', rolesRouter);
 router.use('/products', productsRouter);
 router.use('/companies', companiesRouter);
+router.use('/mappings', mappingsRouter);
 
 module.exports = router;
