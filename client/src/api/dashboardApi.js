@@ -12,7 +12,7 @@ export const useDashboardStats = () => {
   });
 };
 
-export const useDashboardActivity = (limit = 20) => {
+export const useDashboardActivity = (limit = 50) => {
   return useQuery({
     queryKey: ['dashboard', 'activity', limit],
     queryFn: async () => {

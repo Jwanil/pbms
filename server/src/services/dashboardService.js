@@ -33,7 +33,7 @@ const getStats = async () => {
   };
 };
 
-const getRecentActivity = async (limit = 20) => {
+const getRecentActivity = async (limit = 50) => {
   const activities = await prisma.auditLog.findMany({
     orderBy: { created_at: 'desc' },
     take: limit,

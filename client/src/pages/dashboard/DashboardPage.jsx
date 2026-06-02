@@ -32,7 +32,7 @@ const ACTION_COLORS = {
 
 function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
-  const { data: activities, isLoading: activityLoading } = useDashboardActivity(20);
+  const { data: activities, isLoading: activityLoading } = useDashboardActivity(50);
 
   // Calculate total for percentage display
   const totalByType = (stats?.companiesByType || []).reduce((sum, g) => sum + g.count, 0);
@@ -108,7 +108,7 @@ function DashboardPage() {
                 {(stats?.companiesByType || []).map((group) => {
                   const percentage = totalByType > 0 ? Math.round((group.count / totalByType) * 100) : 0;
                   return (
-                    <div key={group.type} style={{ marginBottom: 16 }}>
+                     <div key={group.type} style={{ marginBottom: 16 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                         <Text>{group.type}</Text>
                         <Text strong>{group.count} ({percentage}%)</Text>
@@ -148,7 +148,14 @@ function DashboardPage() {
               dataSource={activities || []}
               loading={activityLoading}
               rowKey="log_id"
-              pagination={false}
+              pagination={{
+                pageSize: 5,
+                size: 'small',
+                showSizeChanger: false,
+                showQuickJumper: false,
+                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
+                simple: false,
+              }}
               size="small"
               locale={{ emptyText: 'No activities yet' }}
             />
