@@ -89,9 +89,9 @@ Swagger UI: http://localhost:5001/api/v1/docs
 
 ## Phase Progress
 - [x] Phase 1 — Project Setup & Architecture (Days 1–2)
-- [ ] Phase 2 — Authentication & User Management (Days 3–4)
-- [ ] Phase 3 — Master Data Modules (Days 5–6)
-- [ ] Phase 4 — Product Master & Company Master (Days 7–9)
-- [ ] Phase 5 — Company Product Mapping & Contact Master (Days 10–11)
-- [ ] Phase 6 — Dashboard & Workflow Integration (Days 12–13)
+- [x] Phase 2 — Authentication & User Management (Days 3–4)
+- [x] Phase 3 — Master Data Modules (Days 5–6)
+- [x] Phase 4 — Product Master & Company Master (Days 7–9)
+- [x] Phase 5 — Company Product Mapping & Contact Master (Days 10–11)
+- [x] Phase 6 — Dashboard & Workflow Integration (Days 12–13)
 - [ ] Phase 7 — QA, Security & Deployment (Day 14)
