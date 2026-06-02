@@ -11,6 +11,7 @@ const productsRouter = require('./products');
 const companiesRouter = require('./companies');
 const mappingsRouter = require('./mappings');
 const contactsRouter = require('./contacts');
+const dashboardRouter = require('./dashboard');
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/products', productsRouter);
 router.use('/companies', companiesRouter);
 router.use('/mappings', mappingsRouter);
 router.use('/contacts', contactsRouter);
+router.use('/dashboard', dashboardRouter);
 
 module.exports = router;
