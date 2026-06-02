@@ -34,11 +34,48 @@ const menuItems = [
   { key: '/roles', icon: <SafetyOutlined />, label: 'Roles & Rights' },
 ];
 
+// Map each sidebar menu key to its permission module name
+const ROUTE_MODULE_MAP = {
+  '/dashboard': 'dashboard',
+  '/products': 'products',
+  '/companies': 'companies',
+  '/mapping': 'mappings',
+  '/contacts': 'contacts',
+  '/masters/categories': 'categories',
+  '/masters/grades': 'grades',
+  '/masters/packaging': 'packaging',
+  '/masters/departments': 'departments',
+  '/users': 'users',
+  '/roles': 'roles',
+};
+
+// Filter menu items based on user permissions
+const filterMenuItems = (items, permissions) => {
+  return items
+    .map((item) => {
+      // If item has children (submenu like "Masters"), filter its children first
+      if (item.children) {
+        const filteredChildren = filterMenuItems(item.children, permissions);
+        // If no children remain after filtering, hide the entire submenu
+        if (filteredChildren.length === 0) return null;
+        return { ...item, children: filteredChildren };
+      }
+
+      // Check permission for this item
+      const moduleName = ROUTE_MODULE_MAP[item.key];
+      if (!moduleName) return item; // No mapping = always show (safety fallback)
+
+      // Only show if user has can_view for this module
+      return permissions?.[moduleName]?.can_view ? item : null;
+    })
+    .filter(Boolean);
+};
+
 function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuthStore();
+  const { user, permissions } = useAuthStore();
   const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
   const handleMenuClick = ({ key }) => navigate(key);
@@ -56,6 +93,8 @@ function AppLayout() {
       disabled: isLoggingOut,
     },
   ];
+
+  const visibleMenuItems = filterMenuItems(menuItems, permissions);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -78,7 +117,7 @@ function AppLayout() {
           mode="inline"
           selectedKeys={[location.pathname]}
           defaultOpenKeys={['masters']}
-          items={menuItems}
+          items={visibleMenuItems}
           onClick={handleMenuClick}
           style={{ borderRight: 0, marginTop: 8 }}
         />

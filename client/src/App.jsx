@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import AppLayout from './components/AppLayout';
+import PermissionRoute from './components/PermissionRoute';
 import { useRevalidateSession } from './api/authApi';
 
 import LoginPage from './pages/auth/LoginPage';
@@ -28,16 +29,16 @@ function App() {
       <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="products" element={<ProductsPage />} />
-        <Route path="companies" element={<CompaniesPage />} />
-        <Route path="mapping" element={<MappingPage />} />
-        <Route path="contacts" element={<ContactsPage />} />
-        <Route path="masters/categories" element={<CategoriesPage />} />
-        <Route path="masters/grades" element={<GradesPage />} />
-        <Route path="masters/packaging" element={<PackagingPage />} />
-        <Route path="masters/departments" element={<DepartmentsPage />} />
-        <Route path="users" element={<UsersPage />} />
-        <Route path="roles" element={<RolesPage />} />
+        <Route path="products" element={<PermissionRoute module="products"><ProductsPage /></PermissionRoute>} />
+        <Route path="companies" element={<PermissionRoute module="companies"><CompaniesPage /></PermissionRoute>} />
+        <Route path="mapping" element={<PermissionRoute module="mappings"><MappingPage /></PermissionRoute>} />
+        <Route path="contacts" element={<PermissionRoute module="contacts"><ContactsPage /></PermissionRoute>} />
+        <Route path="masters/categories" element={<PermissionRoute module="categories"><CategoriesPage /></PermissionRoute>} />
+        <Route path="masters/grades" element={<PermissionRoute module="grades"><GradesPage /></PermissionRoute>} />
+        <Route path="masters/packaging" element={<PermissionRoute module="packaging"><PackagingPage /></PermissionRoute>} />
+        <Route path="masters/departments" element={<PermissionRoute module="departments"><DepartmentsPage /></PermissionRoute>} />
+        <Route path="users" element={<PermissionRoute module="users"><UsersPage /></PermissionRoute>} />
+        <Route path="roles" element={<PermissionRoute module="roles"><RolesPage /></PermissionRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
