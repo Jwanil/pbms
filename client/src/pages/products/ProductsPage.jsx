@@ -67,7 +67,7 @@ function ProductsPage() {
     { title: 'UOM', dataIndex: 'unit_of_measure', key: 'uom', width: 70 },
     { title: 'Status', key: 'status', width: 100, render: (_, r) => <StatusBadge status={r.status} /> },
     {
-      title: 'Actions', key: 'actions', width: 200, fixed: 'right',
+      title: 'Actions', key: 'actions', width: 200,
       render: (_, record) => (
         <Space>
           <PermissionGuard module="products" action="can_edit">
@@ -212,7 +212,6 @@ function ProductsPage() {
           showTotal: (t) => `Total ${t} products`,
           onChange: setPage,
         }}
-        scroll={{ x: 'max-content' }}
         size="middle"
       />
 
