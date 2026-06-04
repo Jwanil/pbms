@@ -7,21 +7,47 @@ const { z } = require('zod');
 const prisma = new PrismaClient();
 
 const createUserSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email'),
-  username: z.string().min(3, 'Username must be at least 3 characters').regex(/^\S+$/, 'No spaces allowed'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  mobile: z.string().optional(),
-  role_id: z.number().int().positive('Role is required'),
+  name: z.string()
+    .min(1, 'Name is required')
+    .max(100, 'Name cannot exceed 100 characters')
+    .trim(),
+  email: z.string()
+    .email('Please enter a valid email address')
+    .max(255),
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(50, 'Username cannot exceed 50 characters')
+    .regex(/^[a-zA-Z0-9_\.]+$/, 'Username can only contain letters, numbers, underscores, and dots')
+    .regex(/^(?!.*\.\.)/, 'Username cannot have consecutive dots')
+    .regex(/^(?!\.)(?!.*\.$)/, 'Username cannot start or end with a dot'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password is too long')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  mobile: z.string()
+    .regex(/^[+]?[\d\s\-\(\)]{7,20}$/, 'Please enter a valid mobile number')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  role_id: z.number({ required_error: 'Role is required' }).int().positive(),
   department_id: z.number().int().positive().optional().nullable(),
 });
 
 const updateUserSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-  username: z.string().min(3).regex(/^\S+$/),
-  mobile: z.string().optional(),
-  role_id: z.number().int().positive(),
+  name: z.string().min(1, 'Name is required').max(100).trim(),
+  email: z.string().email('Invalid email address').max(255),
+  username: z.string()
+    .min(3).max(50)
+    .regex(/^[a-zA-Z0-9_\.]+$/, 'Username can only contain letters, numbers, underscores, and dots'),
+  mobile: z.string()
+    .regex(/^[+]?[\d\s\-\(\)]{7,20}$/, 'Invalid mobile number')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  role_id: z.number().int().positive('Role is required'),
   department_id: z.number().int().positive().optional().nullable(),
 });
 
@@ -49,9 +75,12 @@ const createUserController = async (req, res, next) => {
   try {
     const parsed = createUserSchema.safeParse(req.body);
     if (!parsed.success) {
-      return sendError(res, 'Validation failed', 400, parsed.error.errors.map(e => ({ field: e.path[0], message: e.message })), 'VALIDATION_ERROR');
+      return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
     }
-    const user = await userService.createUser(parsed.data);
+    const cleanData = { ...parsed.data };
+    if (cleanData.mobile === '') cleanData.mobile = null;
+    
+    const user = await userService.createUser(cleanData);
     await writeAuditLog(prisma, req.user.user_id, 'users', 'CREATE', user.user_id, null, { name: user.name, email: user.email }, req);
     return sendSuccess(res, user, 'User created successfully', 201);
   } catch (err) {
@@ -64,10 +93,13 @@ const updateUserController = async (req, res, next) => {
   try {
     const parsed = updateUserSchema.safeParse(req.body);
     if (!parsed.success) {
-      return sendError(res, 'Validation failed', 400, parsed.error.errors.map(e => ({ field: e.path[0], message: e.message })), 'VALIDATION_ERROR');
+      return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
     }
+    const cleanData = { ...parsed.data };
+    if (cleanData.mobile === '') cleanData.mobile = null;
+
     const oldUser = await userService.getUserById(parseInt(req.params.id));
-    const user = await userService.updateUser(parseInt(req.params.id), parsed.data);
+    const user = await userService.updateUser(parseInt(req.params.id), cleanData);
     await writeAuditLog(prisma, req.user.user_id, 'users', 'UPDATE', user.user_id, oldUser, user, req);
     return sendSuccess(res, user, 'User updated successfully');
   } catch (err) {
