@@ -7,32 +7,87 @@ const { z } = require('zod');
 const prisma = new PrismaClient();
 
 const branchSchema = z.object({
-  branch_id: z.number().int().optional(),
-  branch_name: z.string().min(1, 'Branch name is required'),
-  gst_number: z.string().optional().nullable(),
-  pan_number: z.string().optional().nullable(),
-  address_line1: z.string().optional().nullable(),
-  address_line2: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  state: z.string().optional().nullable(),
-  pincode: z.string().optional().nullable(),
-  country: z.string().optional().nullable(),
-  contact_number: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable(),
+  branch_id: z.number().int().positive().optional(),
+  branch_name: z.string().min(1, 'Branch name is required').max(255).trim(),
+  gst_number: z.string()
+    .regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 'Invalid GST format')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  pan_number: z.string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  address_line1: z.string().max(255).optional().nullable(),
+  address_line2: z.string().max(255).optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  state: z.string().max(100).optional().nullable(),
+  pincode: z.string()
+    .regex(/^\d{6}$/, 'Pincode must be exactly 6 digits')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  country: z.string().max(100).optional().nullable(),
+  contact_number: z.string()
+    .regex(/^[+]?[\d\s\-\(\)]{7,20}$/, 'Invalid phone number format')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  email: z.string().email('Invalid email format').max(255).optional().nullable().or(z.literal('')),
+  latitude: z.number().min(-90).max(90).optional().nullable(),
+  longitude: z.number().min(-180).max(180).optional().nullable(),
 });
 
 const companySchema = z.object({
-  company_name: z.string().min(1, 'Company name is required'),
-  company_type: z.enum(['MANUFACTURER', 'SUPPLIER', 'BUYER', 'DISTRIBUTOR']),
-  address: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable(),
-  phone: z.string().optional().nullable(),
-  remarks: z.string().optional().nullable(),
-  gst_number: z.string().length(15, 'GST must be 15 characters').optional().nullable().or(z.literal('')),
-  pan_number: z.string().length(10, 'PAN must be 10 characters').optional().nullable().or(z.literal('')),
-  cin_number: z.string().optional().nullable(),
-  website: z.string().url().optional().nullable().or(z.literal('')),
-  industry_type: z.string().optional().nullable(),
+  company_name: z.string()
+    .min(1, 'Company name is required')
+    .max(255, 'Company name cannot exceed 255 characters')
+    .trim(),
+  company_type: z.enum(['MANUFACTURER', 'SUPPLIER', 'BUYER', 'DISTRIBUTOR'], {
+    required_error: 'Company type is required'
+  }),
+  address: z.string().max(500).optional().nullable(),
+  email: z.string()
+    .email('Please enter a valid email address')
+    .max(255)
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  phone: z.string()
+    .regex(/^[+]?[\d\s\-\(\)]{7,20}$/, 'Please enter a valid phone number')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  remarks: z.string().max(1000, 'Remarks cannot exceed 1000 characters').optional().nullable(),
+  gst_number: z.string()
+    .regex(
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
+      'Invalid GST format. Must be 15 characters (e.g. 22AAAAA0000A1Z5)'
+    )
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  pan_number: z.string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format. Must be 10 characters (e.g. ABCDE1234F)')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  cin_number: z.string()
+    .regex(
+      /^[LUu]{1}[0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6}$/,
+      'Invalid CIN format (e.g. L21091KA2001PLC001234)'
+    )
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  website: z.string()
+    .url('Please enter a valid URL (include https://)')
+    .max(255)
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  industry_type: z.string().max(100).optional().nullable(),
   branches: z.array(branchSchema).optional().default([]),
 });
 
