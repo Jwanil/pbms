@@ -10,6 +10,8 @@ import {
   useCreateCompany, useUpdateCompany,
   useDeactivateCompany, useReactivateCompany
 } from '../../api/companiesApi';
+import useFormErrors from '../../hooks/useFormErrors';
+import { message } from 'antd';
 
 const COMPANY_TYPES = [
   { value: 'MANUFACTURER', label: 'Manufacturer', color: 'blue' },
@@ -33,6 +35,7 @@ function CompaniesPage() {
   const { mutate: update, isPending: updating } = useUpdateCompany();
   const { mutate: deactivate } = useDeactivateCompany();
   const { mutate: reactivate } = useReactivateCompany();
+  const { applyServerErrors } = useFormErrors(form);
 
   useEffect(() => {
     if (editData && editingId) {
@@ -58,11 +61,23 @@ function CompaniesPage() {
   const handleSubmit = (values) => {
     if (editingId) {
       update({ id: editingId, data: values }, {
-        onSuccess: () => { setModalOpen(false); setEditingId(null); }
+        onSuccess: () => { setModalOpen(false); setEditingId(null); },
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            message.error(err?.response?.data?.message || 'Failed to update company');
+          }
+        }
       });
     } else {
       create(values, {
-        onSuccess: () => { setModalOpen(false); }
+        onSuccess: () => { setModalOpen(false); },
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            message.error(err?.response?.data?.message || 'Failed to create company');
+          }
+        }
       });
     }
   };
@@ -119,8 +134,8 @@ function CompaniesPage() {
           <Col span={24}>
             <Form.Item name="address" label="Address"><Input.TextArea rows={2} /></Form.Item>
           </Col>
-          <Col span={12}><Form.Item name="email" label="Email" rules={[{ type: 'email' }]}><Input /></Form.Item></Col>
-          <Col span={12}><Form.Item name="phone" label="Phone"><Input /></Form.Item></Col>
+          <Col span={12}><Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Invalid email format' }]}><Input /></Form.Item></Col>
+          <Col span={12}><Form.Item name="phone" label="Phone" rules={[{ pattern: /^[0-9]{10,15}$/, message: 'Must be 10-15 digits' }]}><Input /></Form.Item></Col>
           <Col span={8}><Form.Item name="gst_number" label="GST Number"><Input maxLength={15} /></Form.Item></Col>
           <Col span={8}><Form.Item name="pan_number" label="PAN Number"><Input maxLength={10} /></Form.Item></Col>
           <Col span={8}><Form.Item name="cin_number" label="CIN Number"><Input /></Form.Item></Col>
@@ -150,8 +165,10 @@ function CompaniesPage() {
                     <Col span={8}><Form.Item {...restField} name={[name, 'city']} label="City"><Input /></Form.Item></Col>
                     <Col span={8}><Form.Item {...restField} name={[name, 'state']} label="State"><Input /></Form.Item></Col>
                     <Col span={8}><Form.Item {...restField} name={[name, 'pincode']} label="Pincode"><Input /></Form.Item></Col>
-                    <Col span={12}><Form.Item {...restField} name={[name, 'contact_number']} label="Contact Number"><Input /></Form.Item></Col>
-                    <Col span={12}><Form.Item {...restField} name={[name, 'email']} label="Email" rules={[{ type: 'email' }]}><Input /></Form.Item></Col>
+                    <Col span={8}><Form.Item {...restField} name={[name, 'contact_number']} label="Contact Number" rules={[{ pattern: /^[0-9]{10,15}$/, message: 'Must be 10-15 digits' }]}><Input /></Form.Item></Col>
+                    <Col span={8}><Form.Item {...restField} name={[name, 'email']} label="Email" rules={[{ type: 'email', message: 'Invalid email format' }]}><Input /></Form.Item></Col>
+                    <Col span={4}><Form.Item {...restField} name={[name, 'latitude']} label="Latitude" rules={[{ type: 'number', min: -90, max: 90, message: 'Must be between -90 and 90' }]}><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
+                    <Col span={4}><Form.Item {...restField} name={[name, 'longitude']} label="Longitude" rules={[{ type: 'number', min: -180, max: 180, message: 'Must be between -180 and 180' }]}><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
                   </Row>
                   <Form.Item {...restField} name={[name, 'branch_id']} hidden><Input /></Form.Item>
                 </Card>
