@@ -6,6 +6,9 @@ import DataTable from './DataTable';
 import FormModal from './FormModal';
 import PermissionGuard from './PermissionGuard';
 
+import useFormErrors from '../hooks/useFormErrors';
+import { message } from 'antd';
+
 function MasterPage({
   title,
   subtitle,
@@ -24,6 +27,7 @@ function MasterPage({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [form] = Form.useForm();
+  const { applyServerErrors } = useFormErrors(form);
 
   const openAdd = () => {
     setEditingRecord(null);
@@ -40,10 +44,24 @@ function MasterPage({
   const handleSubmit = (values) => {
     if (editingRecord) {
       onEdit({ id: editingRecord[rowKey], data: values }, {
-        onSuccess: () => setModalOpen(false)
+        onSuccess: () => setModalOpen(false),
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            message.error(err?.response?.data?.message || 'Failed to update record');
+          }
+        }
       });
     } else {
-      onAdd(values, { onSuccess: () => setModalOpen(false) });
+      onAdd(values, {
+        onSuccess: () => setModalOpen(false),
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            message.error(err?.response?.data?.message || 'Failed to add record');
+          }
+        }
+      });
     }
   };
 
@@ -132,7 +150,15 @@ function MasterPage({
         <Form.Item
           name={nameField}
           label={nameLabel}
-          rules={[{ required: true, message: `${nameLabel} is required` }, { max: 100 }]}
+          rules={[
+            { required: true, message: `${nameLabel} is required` },
+            { max: 100, message: 'Cannot exceed 100 characters' },
+            { whitespace: true, message: 'Cannot be blank spaces' },
+            {
+              pattern: /^[^\<\>\{\}\[\]\\\/\|\*\?\:\"\`]+$/,
+              message: 'Contains invalid special characters'
+            }
+          ]}
         >
           <Input placeholder={`Enter ${nameLabel.toLowerCase()}`} />
         </Form.Item>
