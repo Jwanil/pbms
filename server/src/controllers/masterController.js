@@ -6,11 +6,25 @@ const { z } = require('zod');
 
 const prisma = new PrismaClient();
 
-const nameSchema = z.object({ name: z.string().min(1, 'Name is required').max(100, 'Name too long') });
+const nameSchema = z.object({
+  name: z.string()
+    .min(1, 'Name is required')
+    .max(100, 'Name cannot exceed 100 characters')
+    .trim()
+    .regex(/^[^\<\>\{\}\[\]\\\/\|\*\?\:\"\`]+$/, 'Name contains invalid special characters')
+});
+
 const packagingSchema = z.object({
-  packaging_name: z.string().min(1, 'Name is required').max(100),
-  size_unit: z.string().min(1, 'Size unit is required'),
-  size_value: z.number().positive('Size value must be positive'),
+  packaging_name: z.string()
+    .min(1, 'Packaging name is required')
+    .max(100, 'Name cannot exceed 100 characters')
+    .trim(),
+  size_unit: z.enum(['Kg', 'Litre', 'MT', 'Gram', 'ML'], {
+    invalid_type_error: 'Size unit must be one of: Kg, Litre, MT, Gram, ML'
+  }),
+  size_value: z.number()
+    .positive('Size value must be greater than 0')
+    .max(999999, 'Size value is too large'),
 });
 
 // ── Helper to reduce repetition ───────────────────────────
@@ -30,7 +44,7 @@ const getCategoriesController = async (req, res, next) => {
 const createCategoryController = async (req, res, next) => {
   try {
     const parsed = nameSchema.safeParse({ name: req.body.category_name });
-    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.errors, 'VALIDATION_ERROR');
+    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
     const record = await masterService.createCategory(req.body.category_name);
     await writeAuditLog(prisma, req.user.user_id, 'categories', 'CREATE', record.category_id, null, record, req);
     return sendSuccess(res, record, 'Category created', 201);
@@ -40,7 +54,7 @@ const createCategoryController = async (req, res, next) => {
 const updateCategoryController = async (req, res, next) => {
   try {
     const parsed = nameSchema.safeParse({ name: req.body.category_name });
-    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.errors, 'VALIDATION_ERROR');
+    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
     const old = await masterService.getCategories().then(list => list.find(c => c.category_id === parseInt(req.params.id)));
     const record = await masterService.updateCategory(parseInt(req.params.id), req.body.category_name);
     await writeAuditLog(prisma, req.user.user_id, 'categories', 'UPDATE', record.category_id, old, record, req);
@@ -67,7 +81,7 @@ const getGradesController = async (req, res, next) => {
 const createGradeController = async (req, res, next) => {
   try {
     const parsed = nameSchema.safeParse({ name: req.body.grade_name });
-    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.errors, 'VALIDATION_ERROR');
+    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
     const record = await masterService.createGrade(req.body.grade_name);
     await writeAuditLog(prisma, req.user.user_id, 'grades', 'CREATE', record.grade_id, null, record, req);
     return sendSuccess(res, record, 'Grade created', 201);
@@ -77,7 +91,7 @@ const createGradeController = async (req, res, next) => {
 const updateGradeController = async (req, res, next) => {
   try {
     const parsed = nameSchema.safeParse({ name: req.body.grade_name });
-    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.errors, 'VALIDATION_ERROR');
+    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
     const old = await masterService.getGrades().then(list => list.find(g => g.grade_id === parseInt(req.params.id)));
     const record = await masterService.updateGrade(parseInt(req.params.id), req.body.grade_name);
     await writeAuditLog(prisma, req.user.user_id, 'grades', 'UPDATE', record.grade_id, old, record, req);
@@ -104,7 +118,7 @@ const getPackagingController = async (req, res, next) => {
 const createPackagingController = async (req, res, next) => {
   try {
     const parsed = packagingSchema.safeParse(req.body);
-    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.errors, 'VALIDATION_ERROR');
+    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
     const record = await masterService.createPackaging(parsed.data);
     await writeAuditLog(prisma, req.user.user_id, 'packaging', 'CREATE', record.packaging_id, null, record, req);
     return sendSuccess(res, record, 'Packaging type created', 201);
@@ -114,7 +128,7 @@ const createPackagingController = async (req, res, next) => {
 const updatePackagingController = async (req, res, next) => {
   try {
     const parsed = packagingSchema.safeParse(req.body);
-    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.errors, 'VALIDATION_ERROR');
+    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
     const old = await masterService.getPackaging().then(list => list.find(p => p.packaging_id === parseInt(req.params.id)));
     const record = await masterService.updatePackaging(parseInt(req.params.id), parsed.data);
     await writeAuditLog(prisma, req.user.user_id, 'packaging', 'UPDATE', record.packaging_id, old, record, req);
@@ -141,7 +155,7 @@ const getDepartmentsController = async (req, res, next) => {
 const createDepartmentController = async (req, res, next) => {
   try {
     const parsed = nameSchema.safeParse({ name: req.body.department_name });
-    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.errors, 'VALIDATION_ERROR');
+    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
     const record = await masterService.createDepartment(req.body.department_name);
     await writeAuditLog(prisma, req.user.user_id, 'departments', 'CREATE', record.department_id, null, record, req);
     return sendSuccess(res, record, 'Department created', 201);
@@ -151,7 +165,7 @@ const createDepartmentController = async (req, res, next) => {
 const updateDepartmentController = async (req, res, next) => {
   try {
     const parsed = nameSchema.safeParse({ name: req.body.department_name });
-    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.errors, 'VALIDATION_ERROR');
+    if (!parsed.success) return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
     const old = await masterService.getDepartments().then(list => list.find(d => d.department_id === parseInt(req.params.id)));
     const record = await masterService.updateDepartment(parseInt(req.params.id), req.body.department_name);
     await writeAuditLog(prisma, req.user.user_id, 'departments', 'UPDATE', record.department_id, old, record, req);
