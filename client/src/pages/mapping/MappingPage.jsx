@@ -10,6 +10,8 @@ import {
   useDeactivateMapping, useReactivateMapping,
   useCompanyOptions, useProductOptions
 } from '../../api/mappingsApi';
+import useFormErrors from '../../hooks/useFormErrors';
+import { message } from 'antd';
 
 const ROLE_TYPES = [
   { value: 'MANUFACTURER', label: 'Manufacturer', color: 'blue' },
@@ -38,6 +40,7 @@ function MappingPage() {
   const { mutate: update, isPending: updating } = useUpdateMapping();
   const { mutate: deactivate } = useDeactivateMapping();
   const { mutate: reactivate } = useReactivateMapping();
+  const { applyServerErrors } = useFormErrors(form);
 
   useEffect(() => {
     if (editData && editingId) {
@@ -66,11 +69,28 @@ function MappingPage() {
       // Only send updatable fields
       const { moq, price_range_min, price_range_max, lead_time_days } = values;
       update({ id: editingId, data: { moq, price_range_min, price_range_max, lead_time_days } }, {
-        onSuccess: () => { setModalOpen(false); setEditingId(null); }
+        onSuccess: () => { setModalOpen(false); setEditingId(null); },
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            message.error(err?.response?.data?.message || 'Failed to update mapping');
+          }
+        }
       });
     } else {
       create(values, {
-        onSuccess: () => { setModalOpen(false); }
+        onSuccess: () => { setModalOpen(false); },
+        onError: (err) => {
+          applyServerErrors(err);
+          if (err?.response?.status === 409) {
+            form.setFields([
+              { name: 'product_id', errors: ['This mapping already exists for this company.'] },
+              { name: 'role_type', errors: ['This mapping already exists for this company.'] }
+            ]);
+          } else if (!err?.response?.data?.errors?.length) {
+            message.error(err?.response?.data?.message || 'Failed to create mapping');
+          }
+        }
       });
     }
   };
@@ -195,17 +215,35 @@ function MappingPage() {
             <p style={{ margin: 0 }}><strong>Role:</strong> {editData?.role_type}</p>
           </div>
         )}
-        <Form.Item name="moq" label="Minimum Order Quantity (MOQ)">
-          <InputNumber style={{ width: '100%' }} min={0} placeholder="e.g. 500" />
+        <Form.Item name="moq" label="Minimum Order Quantity (MOQ)" rules={[
+          { type: 'number', min: 0.01, message: 'MOQ must be greater than 0' },
+          { type: 'number', max: 999999999, message: 'MOQ value is too large' },
+        ]}>
+          <InputNumber style={{ width: '100%' }} min={0.01} step={0.01} placeholder="e.g. 500" />
         </Form.Item>
-        <Form.Item name="price_range_min" label="Price Range Min (₹)">
-          <InputNumber style={{ width: '100%' }} min={0} placeholder="e.g. 10000" />
+        <Form.Item name="price_range_min" label="Price Range Min (₹)" rules={[
+          { type: 'number', min: 0, message: 'Minimum price cannot be negative' },
+        ]}>
+          <InputNumber style={{ width: '100%' }} min={0} step={0.01} placeholder="e.g. 120.00" />
         </Form.Item>
-        <Form.Item name="price_range_max" label="Price Range Max (₹)">
-          <InputNumber style={{ width: '100%' }} min={0} placeholder="e.g. 50000" />
+        <Form.Item name="price_range_max" label="Price Range Max (₹)" dependencies={['price_range_min']} rules={[
+          { type: 'number', min: 0, message: 'Maximum price cannot be negative' },
+          ({ getFieldValue }) => ({
+            validator(_, value) {
+              const min = getFieldValue('price_range_min');
+              if (!value || !min || value >= min) return Promise.resolve();
+              return Promise.reject(new Error('Max price must be ≥ min price'));
+            },
+          }),
+        ]}>
+          <InputNumber style={{ width: '100%' }} min={0} step={0.01} placeholder="e.g. 150.00" />
         </Form.Item>
-        <Form.Item name="lead_time_days" label="Lead Time (Days)">
-          <InputNumber style={{ width: '100%' }} min={0} placeholder="e.g. 14" />
+        <Form.Item name="lead_time_days" label="Lead Time (Days)" rules={[
+          { type: 'number', min: 1, message: 'Lead time must be at least 1 day' },
+          { type: 'number', max: 3650, message: 'Lead time cannot exceed 3650 days' },
+          { type: 'integer', message: 'Lead time must be a whole number' },
+        ]}>
+          <InputNumber style={{ width: '100%' }} min={1} max={3650} step={1} precision={0} placeholder="e.g. 14" />
         </Form.Item>
       </FormModal>
     </div>
