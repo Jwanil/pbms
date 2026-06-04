@@ -10,6 +10,8 @@ import {
   useCreateProduct, useUpdateProduct,
   useDeactivateProduct, useReactivateProduct
 } from '../../api/productsApi';
+import useFormErrors from '../../hooks/useFormErrors';
+import { message } from 'antd';
 
 function ProductsPage() {
   const [form] = Form.useForm();
@@ -28,6 +30,8 @@ function ProductsPage() {
   const { mutate: update, isPending: updating } = useUpdateProduct();
   const { mutate: deactivate } = useDeactivateProduct();
   const { mutate: reactivate } = useReactivateProduct();
+
+  const { applyServerErrors } = useFormErrors(form);
 
   useEffect(() => {
     if (editData && editingId) {
@@ -49,11 +53,23 @@ function ProductsPage() {
   const handleSubmit = (values) => {
     if (editingId) {
       update({ id: editingId, data: values }, {
-        onSuccess: () => { setModalOpen(false); setEditingId(null); }
+        onSuccess: () => { setModalOpen(false); setEditingId(null); },
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            message.error(err?.response?.data?.message || 'Failed to update product');
+          }
+        }
       });
     } else {
       create(values, {
-        onSuccess: () => { setModalOpen(false); }
+        onSuccess: () => { setModalOpen(false); },
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            message.error(err?.response?.data?.message || 'Failed to create product');
+          }
+        }
       });
     }
   };
@@ -113,13 +129,24 @@ function ProductsPage() {
       label: 'Basic Info',
       children: (
         <>
-          <Form.Item name="product_name" label="Product Name" rules={[{ required: true }]}>
+          <Form.Item name="product_name" label="Product Name" rules={[
+            { required: true, message: 'Product name is required' },
+            { max: 255, message: 'Cannot exceed 255 characters' },
+            { whitespace: true, message: 'Product name cannot be blank spaces' }
+          ]}>
             <Input />
           </Form.Item>
-          <Form.Item name="sku" label="SKU" rules={[{ required: true }]}>
+          <Form.Item name="sku" label="SKU" rules={[
+            { required: true },
+            { max: 100, message: 'SKU cannot exceed 100 characters' },
+            { pattern: /^[a-zA-Z0-9\-_\/\.]+$/, message: 'SKU can only contain letters, numbers, and -_/.' }
+          ]}>
             <Input />
           </Form.Item>
           <Form.Item name="composition" label="Composition">
+            <Input />
+          </Form.Item>
+          <Form.Item name="cas_number" label="CAS Number" rules={[{ pattern: /^\d{2,7}-\d{2}-\d{1}$/, message: 'Format: XXXXXXX-XX-X (e.g. 67-64-1)' }]}>
             <Input />
           </Form.Item>
           <Form.Item name="category_id" label="Category">
@@ -142,20 +169,6 @@ function ProductsPage() {
               options={[{ value: 'KG', label: 'KG' }, { value: 'LITRE', label: 'Litre' }, { value: 'TON', label: 'Ton' }]}
             />
           </Form.Item>
-        </>
-      ),
-    },
-    {
-      key: 'chemical',
-      label: 'Chemical Data',
-      children: (
-        <>
-          <Form.Item name="molecular_formula" label="Molecular Formula"><Input /></Form.Item>
-          <Form.Item name="molecular_weight" label="Molecular Weight"><InputNumber style={{ width: '100%' }} /></Form.Item>
-          <Form.Item name="purity" label="Purity (%)" rules={[{ type: 'number', min: 0, max: 100 }]}><InputNumber style={{ width: '100%' }} /></Form.Item>
-          <Form.Item name="cas_number" label="CAS Number"><Input /></Form.Item>
-          <Form.Item name="un_number" label="UN Number"><Input /></Form.Item>
-          <Form.Item name="process_type" label="Process Type"><Input /></Form.Item>
         </>
       ),
     },
