@@ -11,6 +11,7 @@ import {
   useUsers, useUserFormData, useCreateUser,
   useUpdateUser, useDeactivateUser, useReactivateUser
 } from '../../api/usersApi';
+import useFormErrors from '../../hooks/useFormErrors';
 
 function UsersPage() {
   const [page, setPage] = useState(1);
@@ -28,6 +29,8 @@ function UsersPage() {
   const { mutate: deactivateUser, isPending: isDeactivating } = useDeactivateUser();
   const { mutate: reactivateUser } = useReactivateUser();
 
+  const { applyServerErrors } = useFormErrors(form);
+
   const openAdd = () => { setEditingUser(null); form.resetFields(); setModalOpen(true); };
   const openEdit = (user) => {
     setEditingUser(user);
@@ -41,9 +44,25 @@ function UsersPage() {
 
   const handleSubmit = (values) => {
     if (editingUser) {
-      updateUser({ id: editingUser.user_id, data: values }, { onSuccess: () => setModalOpen(false) });
+      updateUser({ id: editingUser.user_id, data: values }, {
+        onSuccess: () => setModalOpen(false),
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            import('antd').then(({ message }) => message.error(err?.response?.data?.message || 'Failed to update user'));
+          }
+        }
+      });
     } else {
-      createUser(values, { onSuccess: () => setModalOpen(false) });
+      createUser(values, {
+        onSuccess: () => setModalOpen(false),
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            import('antd').then(({ message }) => message.error(err?.response?.data?.message || 'Failed to create user'));
+          }
+        }
+      });
     }
   };
 
@@ -125,18 +144,30 @@ function UsersPage() {
         <Form.Item name="name" label="Full Name" rules={[{ required: true }]}>
           <Input placeholder="Enter full name" />
         </Form.Item>
-        <Form.Item name="email" label="Email" rules={[{ required: true }, { type: 'email' }]}>
+        <Form.Item name="email" label="Email" rules={[{ required: true }, { type: 'email', message: 'Invalid email format' }]}>
           <Input placeholder="Enter email address" />
         </Form.Item>
-        <Form.Item name="username" label="Username" rules={[{ required: true, min: 3 }]}>
-          <Input placeholder="Enter username (no spaces)" />
+        <Form.Item name="username" label="Username" rules={[
+          { required: true },
+          { min: 3, message: 'At least 3 characters' },
+          { max: 50, message: 'Cannot exceed 50 characters' },
+          { pattern: /^[a-zA-Z0-9_\.]+$/, message: 'Only letters, numbers, _ and . allowed' }
+        ]}>
+          <Input placeholder="Enter username" />
         </Form.Item>
         {!editingUser && (
-          <Form.Item name="password" label="Password" rules={[{ required: true, min: 8 }]}>
+          <Form.Item name="password" label="Password" rules={[
+            { required: true, message: 'Password is required' },
+            { min: 8, message: 'At least 8 characters' },
+            { pattern: /[A-Z]/, message: 'Must contain an uppercase letter' },
+            { pattern: /[a-z]/, message: 'Must contain a lowercase letter' },
+            { pattern: /[0-9]/, message: 'Must contain a number' },
+            { pattern: /[^A-Za-z0-9]/, message: 'Must contain a special character' },
+          ]}>
             <Input.Password placeholder="Minimum 8 characters" />
           </Form.Item>
         )}
-        <Form.Item name="mobile" label="Mobile">
+        <Form.Item name="mobile" label="Mobile" rules={[{ pattern: /^[0-9]{10,15}$/, message: 'Must be 10-15 digits' }]}>
           <Input placeholder="Enter mobile number" />
         </Form.Item>
         <Form.Item name="role_id" label="Role" rules={[{ required: true }]}>
