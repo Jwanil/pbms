@@ -6,7 +6,7 @@ const options = {
     info: {
       title: 'Product & Buyer Management System API',
       version: '1.0.0',
-      description: 'REST API documentation for PBMS — Internal Admin Panel',
+      description: 'REST API documentation for PBMS - Internal Admin Panel',
     },
     servers: [{ url: '/api/v1', description: 'API v1' }],
     components: {

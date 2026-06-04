@@ -17,7 +17,6 @@ const queryClient = new QueryClient({
   },
   mutationCache: new MutationCache({
     onSuccess: () => {
-      // Whenever ANY mutation succeeds, invalidate dashboard so stats/activities are fresh!
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   }),

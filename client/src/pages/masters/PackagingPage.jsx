@@ -19,7 +19,7 @@ function PackagingPage() {
       nameLabel="Packaging Name"
       extraFields={[
         { name: 'size_unit', label: 'Size Unit', rules: [{ required: true }] },
-        { name: 'size_value', label: 'Size Value', type: 'number', rules: [{ required: true }] },
+        { name: 'size_value', label: 'Size Value', type: 'number', rules: [{ required: true }, { type: 'number', min: 0, message: 'Must be non-negative' }] },
       ]}
       onAdd={create}
       onEdit={update}
