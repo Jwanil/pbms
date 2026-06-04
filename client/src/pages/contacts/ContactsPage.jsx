@@ -11,6 +11,8 @@ import {
   useDeactivateContact, useReactivateContact,
   useCompanyOptions, useProductOptions, useBranchesByCompany
 } from '../../api/contactsApi';
+import useFormErrors from '../../hooks/useFormErrors';
+import { message } from 'antd';
 
 const CONTACT_TYPES = [
   { value: 'BUYER', label: 'Buyer', color: 'orange' },
@@ -50,6 +52,8 @@ function ContactsPage() {
   const { mutate: deactivate } = useDeactivateContact();
   const { mutate: reactivate } = useReactivateContact();
 
+  const { applyServerErrors } = useFormErrors(form);
+
   useEffect(() => {
     if (editData && editingId) {
       const tags = editData.tags ? JSON.parse(editData.tags) : [];
@@ -78,11 +82,23 @@ function ContactsPage() {
   const handleSubmit = (values) => {
     if (editingId) {
       update({ id: editingId, data: values }, {
-        onSuccess: () => { setModalOpen(false); setEditingId(null); setSelectedCompanyId(null); }
+        onSuccess: () => { setModalOpen(false); setEditingId(null); setSelectedCompanyId(null); },
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            message.error(err?.response?.data?.message || 'Failed to update contact');
+          }
+        }
       });
     } else {
       create(values, {
-        onSuccess: () => { setModalOpen(false); setSelectedCompanyId(null); }
+        onSuccess: () => { setModalOpen(false); setSelectedCompanyId(null); },
+        onError: (err) => {
+          applyServerErrors(err);
+          if (!err?.response?.data?.errors?.length) {
+            message.error(err?.response?.data?.message || 'Failed to create contact');
+          }
+        }
       });
     }
   };
@@ -150,13 +166,28 @@ function ContactsPage() {
             <Form.Item name="last_name" label="Last Name"><Input /></Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="mobile" label="Mobile" rules={[{ required: true }]}><Input /></Form.Item>
+            <Form.Item name="mobile" label="Mobile" rules={[
+              { required: true, message: 'Mobile number is required' },
+              { pattern: /^[+]?[\d\s\-\(\)]{7,20}$/, message: 'Enter a valid mobile number' }
+            ]}><Input /></Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="alternate_mobile" label="Alternate Mobile"><Input /></Form.Item>
+            <Form.Item name="alternate_mobile" label="Alternate Mobile" dependencies={['mobile']} rules={[
+              { pattern: /^[+]?[\d\s\-\(\)]{7,20}$/, message: 'Enter a valid phone number' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value) return Promise.resolve();
+                  const mobile = getFieldValue('mobile');
+                  if (mobile && value.replace(/\s/g,'') === mobile.replace(/\s/g,'')) {
+                    return Promise.reject(new Error('Must be different from primary mobile'));
+                  }
+                  return Promise.resolve();
+                }
+              })
+            ]}><Input placeholder="+91 98765 43210" /></Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="email" label="Email" rules={[{ type: 'email' }]}><Input /></Form.Item>
+            <Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Invalid email format' }]}><Input /></Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item name="designation" label="Designation"><Input /></Form.Item>
