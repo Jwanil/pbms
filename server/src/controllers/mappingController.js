@@ -6,22 +6,57 @@ const { z } = require('zod');
 
 const prisma = new PrismaClient();
 
+const mappingFields = {
+  moq: z.number()
+    .positive('MOQ must be greater than 0')
+    .max(999999999, 'MOQ value is too large')
+    .optional()
+    .nullable(),
+  price_range_min: z.number()
+    .nonnegative('Minimum price cannot be negative')
+    .max(999999999, 'Price value is too large')
+    .optional()
+    .nullable(),
+  price_range_max: z.number()
+    .nonnegative('Maximum price cannot be negative')
+    .max(999999999, 'Price value is too large')
+    .optional()
+    .nullable(),
+  lead_time_days: z.number()
+    .int('Lead time must be a whole number')
+    .positive('Lead time must be greater than 0')
+    .max(3650, 'Lead time cannot exceed 3650 days (10 years)')
+    .optional()
+    .nullable(),
+};
+
+const refineCheck = [
+  (data) => {
+    if (data.price_range_min !== null && data.price_range_min !== undefined &&
+        data.price_range_max !== null && data.price_range_max !== undefined) {
+      return data.price_range_max >= data.price_range_min;
+    }
+    return true;
+  },
+  {
+    message: 'Maximum price must be greater than or equal to minimum price',
+    path: ['price_range_max'],
+  }
+];
+
 const createMappingSchema = z.object({
-  company_id: z.number().int().positive('Company is required'),
-  product_id: z.number().int().positive('Product is required'),
-  role_type: z.enum(['MANUFACTURER', 'SUPPLIER', 'DISTRIBUTOR']),
-  moq: z.number().positive().optional().nullable(),
-  price_range_min: z.number().min(0).optional().nullable(),
-  price_range_max: z.number().min(0).optional().nullable(),
-  lead_time_days: z.number().int().min(0).optional().nullable(),
-});
+  company_id: z.number({ required_error: 'Company is required' }).int().positive('Invalid company'),
+  product_id: z.number({ required_error: 'Product is required' }).int().positive('Invalid product'),
+  role_type: z.enum(['MANUFACTURER', 'SUPPLIER', 'DISTRIBUTOR'], {
+    required_error: 'Role type is required',
+    invalid_type_error: 'Role type must be MANUFACTURER, SUPPLIER, or DISTRIBUTOR'
+  }),
+  ...mappingFields,
+}).refine(...refineCheck);
 
 const updateMappingSchema = z.object({
-  moq: z.number().positive().optional().nullable(),
-  price_range_min: z.number().min(0).optional().nullable(),
-  price_range_max: z.number().min(0).optional().nullable(),
-  lead_time_days: z.number().int().min(0).optional().nullable(),
-});
+  ...mappingFields,
+}).refine(...refineCheck);
 
 const getMappingsController = async (req, res, next) => {
   try {
