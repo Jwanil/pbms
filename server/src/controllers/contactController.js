@@ -7,19 +7,44 @@ const { z } = require('zod');
 const prisma = new PrismaClient();
 
 const contactSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().optional().nullable(),
-  mobile: z.string().min(1, 'Mobile is required'),
-  alternate_mobile: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable().or(z.literal('')),
+  first_name: z.string()
+    .min(1, 'First name is required')
+    .max(100, 'First name cannot exceed 100 characters')
+    .trim(),
+  last_name: z.string().max(100).optional().nullable(),
+  mobile: z.string()
+    .regex(/^[+]?[\d\s\-\(\)]{7,20}$/, 'Please enter a valid mobile number')
+    .min(7, 'Mobile number is too short'),
+  alternate_mobile: z.string()
+    .regex(/^[+]?[\d\s\-\(\)]{7,20}$/, 'Please enter a valid alternate mobile number')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  email: z.string()
+    .email('Please enter a valid email address')
+    .max(255)
+    .optional()
+    .nullable()
+    .or(z.literal('')),
   company_id: z.number().int().positive().optional().nullable(),
   branch_id: z.number().int().positive().optional().nullable(),
   contact_type: z.enum(['BUYER', 'PURCHASE_MANAGER', 'SALES', 'ADMIN']).optional().nullable(),
-  designation: z.string().optional().nullable(),
+  designation: z.string().max(100, 'Designation cannot exceed 100 characters').optional().nullable(),
   preferred_language: z.enum(['ENGLISH', 'HINDI', 'REGIONAL']).optional().nullable(),
-  tags: z.array(z.string()).optional().nullable().default([]),
+  tags: z.preprocess((val) => Array.isArray(val) ? JSON.stringify(val) : val, z.string().max(1000, 'Tags string too long').optional().nullable()),
   product_ids: z.array(z.number().int().positive()).optional().default([]),
-});
+}).refine(
+  (data) => {
+    if (data.mobile && data.alternate_mobile) {
+      return data.mobile.replace(/\s/g, '') !== data.alternate_mobile.replace(/\s/g, '');
+    }
+    return true;
+  },
+  {
+    message: 'Alternate mobile must be different from the primary mobile number',
+    path: ['alternate_mobile'],
+  }
+);
 
 const getContactsController = async (req, res, next) => {
   try {
@@ -49,6 +74,13 @@ const createContactController = async (req, res, next) => {
     }
     const cleanData = { ...parsed.data };
     if (cleanData.email === '') cleanData.email = null;
+    if (cleanData.alternate_mobile === '') cleanData.alternate_mobile = null;
+    
+    // tags is already stringified by preprocess if it was an array.
+    // If contactService does JSON.stringify again, we need to parse it back here so contactService doesn't double-encode.
+    if (typeof cleanData.tags === 'string') {
+        try { cleanData.tags = JSON.parse(cleanData.tags); } catch (e) {}
+    }
 
     const contact = await contactService.createContact(cleanData);
     await writeAuditLog(prisma, req.user.user_id, 'contacts', 'CREATE', contact.contact_id, null, { first_name: contact.first_name, mobile: contact.mobile }, req);
@@ -68,6 +100,11 @@ const updateContactController = async (req, res, next) => {
     const contactId = parseInt(req.params.id);
     const cleanData = { ...parsed.data };
     if (cleanData.email === '') cleanData.email = null;
+    if (cleanData.alternate_mobile === '') cleanData.alternate_mobile = null;
+
+    if (typeof cleanData.tags === 'string') {
+        try { cleanData.tags = JSON.parse(cleanData.tags); } catch (e) {}
+    }
 
     const oldContact = await contactService.getContactById(contactId);
     const contact = await contactService.updateContact(contactId, cleanData);
