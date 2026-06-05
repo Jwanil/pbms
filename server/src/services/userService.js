@@ -59,7 +59,6 @@ const getUserById = async (userId) => {
 };
 
 const createUser = async ({ name, email, username, password, mobile, role_id, department_id }) => {
-  // Check unique constraints
   const existing = await prisma.user.findFirst({
     where: { OR: [{ email }, { username }] }
   });
@@ -70,27 +69,59 @@ const createUser = async ({ name, email, username, password, mobile, role_id, de
 
   const password_hash = await bcrypt.hash(password, 12);
 
-  const user = await prisma.user.create({
-    data: {
-      name, email, username, password_hash,
-      mobile: mobile || null,
-      role_id,
-      department_id: department_id || null,
-      status: 'ACTIVE',
-    },
-    select: {
-      user_id: true, name: true, email: true, username: true,
-      mobile: true, status: true, created_at: true,
-      role: { select: { role_id: true, role_name: true } },
-      department: { select: { department_id: true, department_name: true } },
-    }
+  const user = await prisma.$transaction(async (tx) => {
+    const newUser = await tx.user.create({
+      data: {
+        name, email, username, password_hash,
+        mobile: mobile || null,
+        role_id,
+        department_id: department_id || null,
+        status: 'ACTIVE',
+      },
+      select: {
+        user_id: true, name: true, email: true, username: true,
+        mobile: true, status: true, created_at: true,
+        role: { select: { role_id: true, role_name: true } },
+        department: { select: { department_id: true, department_name: true } },
+      }
+    });
+
+    const modules = [
+      'products', 'companies', 'mappings', 'contacts',
+      'packaging', 'categories', 'departments', 'grades',
+      'users', 'roles', 'dashboard'
+    ];
+
+    const roleDefaults = {
+      1: { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      2: { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      3: { can_view: true, can_create: false, can_edit: false, can_delete: false },
+    };
+
+    const defaults = roleDefaults[role_id] || roleDefaults[3];
+
+    const permissionInserts = modules.map((mod) => {
+      const isRestricted = ['users', 'roles'].includes(mod);
+      return tx.permission.create({
+        data: {
+          user_id: newUser.user_id,
+          module_name: mod,
+          can_view: isRestricted ? (role_id === 1) : defaults.can_view,
+          can_create: isRestricted ? (role_id === 1) : defaults.can_create,
+          can_edit: isRestricted ? (role_id === 1) : defaults.can_edit,
+          can_delete: isRestricted ? (role_id === 1) : defaults.can_delete,
+        }
+      });
+    });
+
+    await Promise.all(permissionInserts);
+    return newUser;
   });
 
   return user;
 };
 
 const updateUser = async (userId, { name, email, username, mobile, role_id, department_id }) => {
-  // Check unique constraints excluding current user
   const existing = await prisma.user.findFirst({
     where: {
       AND: [
