@@ -16,7 +16,6 @@ import GradesPage from './pages/masters/GradesPage';
 import PackagingPage from './pages/masters/PackagingPage';
 import DepartmentsPage from './pages/masters/DepartmentsPage';
 import UsersPage from './pages/users/UsersPage';
-import RolesPage from './pages/roles/RolesPage';
 
 function App() {
   // Revalidate session on every app load
@@ -38,7 +37,6 @@ function App() {
         <Route path="masters/packaging" element={<PermissionRoute module="packaging"><PackagingPage /></PermissionRoute>} />
         <Route path="masters/departments" element={<PermissionRoute module="departments"><DepartmentsPage /></PermissionRoute>} />
         <Route path="users" element={<PermissionRoute module="users"><UsersPage /></PermissionRoute>} />
-        <Route path="roles" element={<PermissionRoute module="roles"><RolesPage /></PermissionRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
