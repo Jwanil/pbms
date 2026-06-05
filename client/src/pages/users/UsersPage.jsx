@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Button, Form, Input, Select, Space, Tag, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, SafetyOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
 import DataTable from '../../components/DataTable';
 import FormModal from '../../components/FormModal';
 import StatusBadge from '../../components/StatusBadge';
 import ConfirmDeactivate from '../../components/ConfirmDeactivate';
 import PermissionGuard from '../../components/PermissionGuard';
+import UserPermissionsModal from '../../components/UserPermissionsModal';
 import {
   useUsers, useUserFormData, useCreateUser,
   useUpdateUser, useDeactivateUser, useReactivateUser
@@ -20,6 +21,8 @@ function UsersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
+  const [permUserId, setPermUserId] = useState(null);
+  const [permUserName, setPermUserName] = useState('');
   const [form] = Form.useForm();
 
   const { data, isLoading } = useUsers({ page, limit: 20, search, status: statusFilter });
@@ -92,6 +95,14 @@ function UsersPage() {
                 <Button icon={<CheckOutlined />} size="small" onClick={() => reactivateUser(record.user_id)} />
               </Tooltip>
             )}
+          </PermissionGuard>
+          <PermissionGuard module="users" action="can_edit">
+            <Tooltip title="Permissions">
+              <Button icon={<SafetyOutlined />} size="small" onClick={() => {
+                setPermUserId(record.user_id);
+                setPermUserName(record.name);
+              }} />
+            </Tooltip>
           </PermissionGuard>
         </Space>
       )
@@ -191,6 +202,13 @@ function UsersPage() {
         onConfirm={() => deactivateUser(deactivateTarget.user_id, { onSuccess: () => setDeactivateTarget(null) })}
         onCancel={() => setDeactivateTarget(null)}
         loading={isDeactivating}
+      />
+
+      <UserPermissionsModal
+        open={!!permUserId}
+        onClose={() => setPermUserId(null)}
+        userId={permUserId}
+        userName={permUserName}
       />
     </div>
   );
