@@ -31,7 +31,6 @@ const menuItems = [
     ],
   },
   { key: '/users', icon: <UserOutlined />, label: 'Users' },
-  { key: '/roles', icon: <SafetyOutlined />, label: 'Roles & Rights' },
 ];
 
 // Map each sidebar menu key to its permission module name
@@ -46,7 +45,6 @@ const ROUTE_MODULE_MAP = {
   '/masters/packaging': 'packaging',
   '/masters/departments': 'departments',
   '/users': 'users',
-  '/roles': 'roles',
 };
 
 // Filter menu items based on user permissions
