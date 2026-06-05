@@ -6,16 +6,16 @@ const prisma = new PrismaClient();
 const roleGuard = (moduleName, action) => {
   return async (req, res, next) => {
     try {
-      const roleId = req.user?.role_id;
+      const userId = req.user?.user_id;
 
-      if (!roleId) {
+      if (!userId) {
         return sendError(res, 'Unauthorized', 401, [], 'UNAUTHORIZED');
       }
 
       const permission = await prisma.permission.findUnique({
         where: {
-          role_id_module_name: {
-            role_id: roleId,
+          user_id_module_name: {
+            user_id: userId,
             module_name: moduleName,
           }
         }

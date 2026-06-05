@@ -91,25 +91,24 @@ model Department {
 // --- ROLES & PERMISSIONS ---
 
 model Role {
-  role_id     Int          @id @default(autoincrement())
-  role_name   RoleName     @unique
+  role_id     Int      @id @default(autoincrement())
+  role_name   RoleName @unique
   description String?
-  permissions Permission[]
   users       User[]
 }
 
 model Permission {
   permission_id Int     @id @default(autoincrement())
-  role_id       Int
+  user_id       Int
   module_name   String
   can_view      Boolean @default(false)
   can_create    Boolean @default(false)
   can_edit      Boolean @default(false)
   can_delete    Boolean @default(false)
 
-  role Role @relation(fields: [role_id], references: [role_id])
+  user User @relation(fields: [user_id], references: [user_id])
 
-  @@unique([role_id, module_name])
+  @@unique([user_id, module_name])
 }
 
 // --- USERS ---
@@ -133,6 +132,7 @@ model User {
   products_created Product[]   @relation("ProductCreatedBy")
   products_updated Product[]   @relation("ProductUpdatedBy")
   audit_logs       AuditLog[]
+  permissions      Permission[]
 
   @@index([email])
   @@index([username])

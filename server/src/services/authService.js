@@ -42,9 +42,9 @@ const login = async (email, password) => {
     throw { statusCode: 401, message: 'Invalid email or password', code: 'INVALID_CREDENTIALS' };
   }
 
-  // 4. Fetch permissions for this role
+  // 4. Fetch permissions for this user
   const permissions = await prisma.permission.findMany({
-    where: { role_id: user.role_id }
+    where: { user_id: user.user_id }
   });
 
   // 5. Shape permissions as { module_name: { can_view, can_create, can_edit, can_delete } }

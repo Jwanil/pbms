@@ -89,7 +89,7 @@ const meController = async (req, res, next) => {
     }
 
     const permissions = await prisma.permission.findMany({
-      where: { role_id: user.role_id }
+      where: { user_id: user.user_id }
     });
 
     const permissionsMap = {};
