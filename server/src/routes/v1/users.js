@@ -2,7 +2,7 @@ const { Router } = require('express');
 const {
   getUsersController, getUserByIdController, createUserController,
   updateUserController, deactivateUserController, reactivateUserController,
-  getRolesAndDepartmentsController
+  getRolesAndDepartmentsController, getUserPermissionsController, updateUserPermissionsController
 } = require('../../controllers/userController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
@@ -126,5 +126,59 @@ router.patch('/:id/deactivate', verifyToken, roleGuard('users', 'can_delete'), d
  *         description: User reactivated
  */
 router.patch('/:id/reactivate', verifyToken, roleGuard('users', 'can_edit'), reactivateUserController);
+
+/**
+ * @swagger
+ * /users/{id}/permissions:
+ *   get:
+ *     summary: Get permissions for a specific user
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: User permissions fetched
+ */
+router.get('/:id/permissions', verifyToken, roleGuard('users', 'can_view'), getUserPermissionsController);
+
+/**
+ * @swagger
+ * /users/{id}/permissions:
+ *   put:
+ *     summary: Update permissions for a specific user
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [permissions]
+ *             properties:
+ *               permissions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     module_name: { type: string }
+ *                     can_view: { type: boolean }
+ *                     can_create: { type: boolean }
+ *                     can_edit: { type: boolean }
+ *                     can_delete: { type: boolean }
+ *     responses:
+ *       200:
+ *         description: User permissions updated
+ *       403:
+ *         description: Cannot modify Super Admin permissions
+ */
+router.put('/:id/permissions', verifyToken, roleGuard('users', 'can_edit'), updateUserPermissionsController);
 
 module.exports = router;
