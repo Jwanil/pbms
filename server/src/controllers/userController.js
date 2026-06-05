@@ -134,8 +134,73 @@ const getRolesAndDepartmentsController = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const getUserPermissionsController = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const permissions = await prisma.permission.findMany({
+      where: { user_id: userId },
+      orderBy: { module_name: 'asc' },
+    });
+    return sendSuccess(res, permissions, 'User permissions fetched');
+  } catch (err) { next(err); }
+};
+
+const updateUserPermissionsController = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    const targetUser = await prisma.user.findUnique({
+      where: { user_id: userId },
+      select: { role: { select: { role_name: true } } }
+    });
+    if (targetUser?.role?.role_name === 'SUPER_ADMIN') {
+      return sendError(res, 'Cannot modify Super Admin permissions', 403, [], 'FORBIDDEN');
+    }
+
+    const permissionSchema = z.array(
+      z.object({
+        module_name: z.string().min(1),
+        can_view: z.boolean(),
+        can_create: z.boolean(),
+        can_edit: z.boolean(),
+        can_delete: z.boolean(),
+      })
+    ).min(1, 'At least one permission is required');
+
+    const parsed = permissionSchema.safeParse(req.body.permissions);
+    if (!parsed.success) {
+      return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
+    }
+
+    const oldPermissions = await prisma.permission.findMany({
+      where: { user_id: userId },
+    });
+
+    const updates = parsed.data.map((p) =>
+      prisma.permission.updateMany({
+        where: { user_id: userId, module_name: p.module_name },
+        data: { can_view: p.can_view, can_create: p.can_create, can_edit: p.can_edit, can_delete: p.can_delete }
+      })
+    );
+
+    await prisma.$transaction(updates);
+
+    const newPermissions = await prisma.permission.findMany({
+      where: { user_id: userId },
+      orderBy: { module_name: 'asc' },
+    });
+
+    await writeAuditLog(prisma, req.user.user_id, 'users', 'UPDATE', userId, { permissions: oldPermissions }, { permissions: newPermissions }, req);
+
+    return sendSuccess(res, newPermissions, 'Permissions updated successfully');
+  } catch (err) {
+    if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
+    next(err);
+  }
+};
+
 module.exports = {
   getUsersController, getUserByIdController, createUserController,
   updateUserController, deactivateUserController, reactivateUserController,
-  getRolesAndDepartmentsController
+  getRolesAndDepartmentsController, getUserPermissionsController, updateUserPermissionsController
 };
