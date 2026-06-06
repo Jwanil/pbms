@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Space, Input, Select, Tag, Form, Tabs, Popconfirm, Spin, Card, Row, Col, Divider } from 'antd';
+import { Table, Button, Space, Input, InputNumber, Select, Tag, Form, Tabs, Popconfirm, Spin, Card, Row, Col, Divider } from 'antd';
 import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, DeleteOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
