@@ -1,3 +1,88 @@
+
+/**
+ * @swagger
+ * /{id}/reactivate:
+ *   patch:
+ *     summary: PATCH /{id}/reactivate
+ *     tags: [Companies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /{id}/deactivate:
+ *   patch:
+ *     summary: PATCH /{id}/deactivate
+ *   tags: [Companies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /{id}:
+ *   put:
+ *     summary: PUT /{id}
+ *     tags: [Companies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /:
+ *   post:
+ *     summary: POST /
+ *     tags: [Companies]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /{id}:
+ *   get:
+ *     summary: GET /{id}
+ *     tags: [Companies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 const { Router } = require('express');
 const {
   getCompaniesController, getCompanyByIdController, createCompanyController,

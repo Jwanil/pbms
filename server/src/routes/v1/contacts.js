@@ -1,3 +1,110 @@
+
+/**
+ * @swagger
+ * /{id}/reactivate:
+ *   patch:
+ *     summary: PATCH /{id}/reactivate
+ *     tags: [Contacts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /{id}/deactivate:
+ *   patch:
+ *     summary: PATCH /{id}/deactivate
+ *     tags: [Contacts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /{id}:
+ *   put:
+ *     summary: PUT /{id}
+ *     tags: [Contacts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /:
+ *   post:
+ *     summary: POST /
+ *     tags: [Contacts]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { type: object }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /{id}:
+ *   get:
+ *     summary: GET /{id}
+ *     tags: [Contacts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     summary: GET /
+ *     tags: [Contacts]
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /branches/:companyId:
+ *   get:
+ *     summary: GET /branches/:companyId
+ *     tags: [Contacts]
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 const { Router } = require('express');
 const {
   getContactsController, getContactByIdController, createContactController,

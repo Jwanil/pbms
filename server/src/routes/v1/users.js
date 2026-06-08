@@ -1,3 +1,30 @@
+
+/**
+ * @swagger
+ * /{id}:
+ *   get:
+ *     summary: GET /{id}
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+
+/**
+ * @swagger
+ * /form-data:
+ *   get:
+ *     summary: GET /form-data
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 const { Router } = require('express');
 const {
   getUsersController, getUserByIdController, createUserController,
