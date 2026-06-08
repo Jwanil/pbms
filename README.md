@@ -87,11 +87,25 @@ Swagger UI: http://localhost:5001/api/v1/docs
   /prisma           schema.prisma, migrations, seed.js
 ```
 
+## API Overview
+The backend provides the following REST APIs under `/api/v1/`:
+- `/auth`: Login, logout, token refresh, `/me` profile.
+- `/dashboard`: KPI counts, charts, activity feed.
+- `/products`: Product master CRUD.
+- `/companies`: Company master and branch management CRUD.
+- `/mappings`: Product-to-Company mapping CRUD.
+- `/contacts`: Contact master and product interests CRUD.
+- `/categories`, `/grades`, `/packaging`, `/departments`: Setup master CRUD.
+- `/users`: User and permission management CRUD.
+
 ## Phase Progress
-- [x] Phase 1 — Project Setup & Architecture (Days 1–2)
-- [x] Phase 2 — Authentication & User Management (Days 3–4)
-- [x] Phase 3 — Master Data Modules (Days 5–6)
-- [x] Phase 4 — Product Master & Company Master (Days 7–9)
-- [x] Phase 5 — Company Product Mapping & Contact Master (Days 10–11)
-- [x] Phase 6 — Dashboard & Workflow Integration (Days 12–13)
-- [ ] Phase 7 — QA, Security & Deployment (Day 14)
+- `[x]` Phase 1 — Project Setup & Architecture
+- `[x]` Phase 2 — Authentication & User Management
+- `[x]` Phase 3 — Master Data Modules
+- `[x]` Phase 4 — Product Master & Company Master
+- `[x]` Phase 5 — Company Product Mapping & Contact Master
+- `[x]` Phase 6 — Dashboard & Workflow Integration
+- `[x]` Phase 7 — Comprehensive Form Validations
+- `[x]` Phase 8 — User-Level Permissions Refactor
+- `[x]` Phase 9 — Comprehensive QA Sweep, Bug Fixes & Polish
+- `[ ]` Phase 10 — Final Deployment & Handoff
