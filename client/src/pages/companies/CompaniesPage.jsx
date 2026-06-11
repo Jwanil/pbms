@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, InputNumber, Select, Tag, Form, Tabs, Popconfirm, Spin, Card, Row, Col, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
+import CompanyViewDrawer from '../../components/CompanyViewDrawer';
+import ColumnSelector from '../../components/ColumnSelector';
 import StatusBadge from '../../components/StatusBadge';
 import PermissionGuard from '../../components/PermissionGuard';
 import {
@@ -11,6 +13,7 @@ import {
   useDeactivateCompany, useReactivateCompany
 } from '../../api/companiesApi';
 import useFormErrors from '../../hooks/useFormErrors';
+import useColumnVisibility from '../../hooks/useColumnVisibility';
 import { message } from 'antd';
 
 const COMPANY_TYPES = [
@@ -28,6 +31,7 @@ function CompaniesPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [viewId, setViewId] = useState(null);
 
   const { data: listData, isLoading } = useCompanies({ page, search, company_type: filterType, status: filterStatus });
   const { data: editData } = useCompany(editingId);
@@ -82,7 +86,7 @@ function CompaniesPage() {
     }
   };
 
-  const columns = [
+  const allColumns = [
     { title: 'Company Name', dataIndex: 'company_name', key: 'company_name', width: 200 },
     {
       title: 'Type', key: 'company_type', width: 130,
@@ -100,6 +104,9 @@ function CompaniesPage() {
       title: 'Actions', key: 'actions', width: 200,
       render: (_, record) => (
         <Space>
+          <PermissionGuard module="companies" action="can_view">
+            <Button size="small" icon={<EyeOutlined />} onClick={() => setViewId(record.company_id)}>View</Button>
+          </PermissionGuard>
           <PermissionGuard module="companies" action="can_edit">
             <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Edit</Button>
           </PermissionGuard>
@@ -116,6 +123,8 @@ function CompaniesPage() {
       ),
     },
   ];
+
+  const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
 
   const formTabs = [
     {
@@ -211,11 +220,12 @@ function CompaniesPage() {
             value={filterStatus || undefined} onChange={(v) => { setFilterStatus(v || ''); setPage(1); }}
             options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'INACTIVE', label: 'Inactive' }]}
           />
+          <ColumnSelector columns={allColumns} hiddenKeys={hiddenKeys} onToggle={toggleColumn} />
         </Space>
       </Space>
 
       <Table
-        columns={columns} dataSource={listData?.data || []}
+        columns={visibleColumns} dataSource={listData?.data || []}
         loading={isLoading} rowKey="company_id"
         pagination={{
           current: page, total: listData?.pagination?.total || 0, pageSize: 20,
@@ -230,6 +240,8 @@ function CompaniesPage() {
       >
         <Tabs items={formTabs} />
       </FormModal>
+
+      <CompanyViewDrawer open={!!viewId} companyId={viewId} onClose={() => setViewId(null)} />
     </div>
   );
 }

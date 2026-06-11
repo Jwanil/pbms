@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, Select, Tag, Form, Tabs, InputNumber, Popconfirm, Spin } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
+import ProductViewDrawer from '../../components/ProductViewDrawer';
+import ColumnSelector from '../../components/ColumnSelector';
 import StatusBadge from '../../components/StatusBadge';
 import PermissionGuard from '../../components/PermissionGuard';
 import {
@@ -11,6 +13,7 @@ import {
   useDeactivateProduct, useReactivateProduct
 } from '../../api/productsApi';
 import useFormErrors from '../../hooks/useFormErrors';
+import useColumnVisibility from '../../hooks/useColumnVisibility';
 import { message } from 'antd';
 
 function ProductsPage() {
@@ -22,6 +25,7 @@ function ProductsPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [viewId, setViewId] = useState(null);
 
   const { data: listData, isLoading } = useProducts({ page, search, category_id: filterCategory, grade_id: filterGrade, status: filterStatus });
   const { data: editData } = useProduct(editingId);
@@ -74,7 +78,7 @@ function ProductsPage() {
     }
   };
 
-  const columns = [
+  const allColumns = [
     { title: 'Product Name', dataIndex: 'product_name', key: 'product_name', width: 200 },
     { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 120 },
     { title: 'CAS Number', dataIndex: 'cas_number', key: 'cas_number', width: 130 },
@@ -86,6 +90,9 @@ function ProductsPage() {
       title: 'Actions', key: 'actions', width: 200,
       render: (_, record) => (
         <Space>
+          <PermissionGuard module="products" action="can_view">
+            <Button size="small" icon={<EyeOutlined />} onClick={() => setViewId(record.product_id)}>View</Button>
+          </PermissionGuard>
           <PermissionGuard module="products" action="can_edit">
             <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Edit</Button>
           </PermissionGuard>
@@ -102,6 +109,8 @@ function ProductsPage() {
       ),
     },
   ];
+
+  const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
 
   const filterBar = (
     <Space wrap>
@@ -209,11 +218,14 @@ function ProductsPage() {
           style={{ width: 300 }}
           prefix={<SearchOutlined />}
         />
-        {filterBar}
+        <Space>
+          {filterBar}
+          <ColumnSelector columns={allColumns} hiddenKeys={hiddenKeys} onToggle={toggleColumn} />
+        </Space>
       </Space>
 
       <Table
-        columns={columns}
+        columns={visibleColumns}
         dataSource={listData?.data || []}
         loading={isLoading}
         rowKey="product_id"
@@ -239,6 +251,8 @@ function ProductsPage() {
       >
         <Tabs items={formTabs} />
       </FormModal>
+
+      <ProductViewDrawer open={!!viewId} productId={viewId} onClose={() => setViewId(null)} />
     </div>
   );
 }
