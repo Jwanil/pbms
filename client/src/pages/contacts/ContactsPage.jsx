@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, Select, Tag, Form, Tabs, Popconfirm, Row, Col, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
+import ContactViewDrawer from '../../components/ContactViewDrawer';
+import ColumnSelector from '../../components/ColumnSelector';
 import StatusBadge from '../../components/StatusBadge';
 import PermissionGuard from '../../components/PermissionGuard';
 import {
@@ -12,6 +14,7 @@ import {
   useCompanyOptions, useProductOptions, useBranchesByCompany
 } from '../../api/contactsApi';
 import useFormErrors from '../../hooks/useFormErrors';
+import useColumnVisibility from '../../hooks/useColumnVisibility';
 import { message } from 'antd';
 
 const CONTACT_TYPES = [
@@ -38,6 +41,7 @@ function ContactsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+  const [viewId, setViewId] = useState(null);
 
   const { data: listData, isLoading } = useContacts({
     page, search, contact_type: filterType, preferred_language: filterLang,
@@ -108,7 +112,7 @@ function ContactsPage() {
     form.setFieldValue('branch_id', null); // Reset branch when company changes
   };
 
-  const columns = [
+  const allColumns = [
     { title: 'Name', key: 'name', width: 180, render: (_, r) => `${r.first_name} ${r.last_name || ''}`.trim() },
     { title: 'Mobile', dataIndex: 'mobile', key: 'mobile', width: 130 },
     { title: 'Email', dataIndex: 'email', key: 'email', width: 180 },
@@ -136,6 +140,9 @@ function ContactsPage() {
       title: 'Actions', key: 'actions', width: 200,
       render: (_, record) => (
         <Space>
+          <PermissionGuard module="contacts" action="can_view">
+            <Button size="small" icon={<EyeOutlined />} onClick={() => setViewId(record.contact_id)}>View</Button>
+          </PermissionGuard>
           <PermissionGuard module="contacts" action="can_edit">
             <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Edit</Button>
           </PermissionGuard>
@@ -152,6 +159,8 @@ function ContactsPage() {
       ),
     },
   ];
+
+  const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
 
   const formTabs = [
     {
@@ -291,10 +300,11 @@ function ContactsPage() {
           value={filterStatus || undefined} onChange={(v) => { setFilterStatus(v || ''); setPage(1); }}
           options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'INACTIVE', label: 'Inactive' }]}
         />
+        <ColumnSelector columns={allColumns} hiddenKeys={hiddenKeys} onToggle={toggleColumn} />
       </Space>
 
       <Table
-        columns={columns} dataSource={listData?.data || []}
+        columns={visibleColumns} dataSource={listData?.data || []}
         loading={isLoading} rowKey="contact_id"
         pagination={{
           current: page, total: listData?.pagination?.total || 0, pageSize: 20,
@@ -309,6 +319,8 @@ function ContactsPage() {
       >
         <Tabs items={formTabs} />
       </FormModal>
+
+      <ContactViewDrawer open={!!viewId} contactId={viewId} onClose={() => setViewId(null)} />
     </div>
   );
 }

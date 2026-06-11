@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Space, Select, Tag, Form, Popconfirm, InputNumber } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, EyeOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
+import MappingViewDrawer from '../../components/MappingViewDrawer';
+import ColumnSelector from '../../components/ColumnSelector';
 import PermissionGuard from '../../components/PermissionGuard';
 import {
   useMappings, useMapping,
@@ -11,6 +13,7 @@ import {
   useCompanyOptions, useProductOptions
 } from '../../api/mappingsApi';
 import useFormErrors from '../../hooks/useFormErrors';
+import useColumnVisibility from '../../hooks/useColumnVisibility';
 import { message } from 'antd';
 
 const ROLE_TYPES = [
@@ -28,6 +31,7 @@ function MappingPage() {
   const [filterActive, setFilterActive] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [viewId, setViewId] = useState(null);
 
   const { data: listData, isLoading } = useMappings({
     page, company_id: filterCompany, product_id: filterProduct,
@@ -95,7 +99,7 @@ function MappingPage() {
     }
   };
 
-  const columns = [
+  const allColumns = [
     { title: 'Company', key: 'company', width: 200, render: (_, r) => r.company?.company_name || '—' },
     { title: 'Product', key: 'product', width: 200, render: (_, r) => `${r.product?.product_name || '—'} (${r.product?.sku || ''})` },
     {
@@ -124,6 +128,9 @@ function MappingPage() {
       title: 'Actions', key: 'actions', width: 200,
       render: (_, record) => (
         <Space>
+          <PermissionGuard module="mappings" action="can_view">
+            <Button size="small" icon={<EyeOutlined />} onClick={() => setViewId(record.mapping_id)}>View</Button>
+          </PermissionGuard>
           <PermissionGuard module="mappings" action="can_edit">
             <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Edit</Button>
           </PermissionGuard>
@@ -140,6 +147,8 @@ function MappingPage() {
       ),
     },
   ];
+
+  const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
 
   return (
     <div>
@@ -175,10 +184,11 @@ function MappingPage() {
           value={filterActive || undefined} onChange={(v) => { setFilterActive(v !== undefined ? v : ''); setPage(1); }}
           options={[{ value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' }]}
         />
+        <ColumnSelector columns={allColumns} hiddenKeys={hiddenKeys} onToggle={toggleColumn} />
       </Space>
 
       <Table
-        columns={columns} dataSource={listData?.data || []}
+        columns={visibleColumns} dataSource={listData?.data || []}
         loading={isLoading} rowKey="mapping_id"
         pagination={{
           current: page, total: listData?.pagination?.total || 0, pageSize: 20,
@@ -246,6 +256,8 @@ function MappingPage() {
           <InputNumber style={{ width: '100%' }} min={1} max={3650} step={1} precision={0} placeholder="e.g. 14" />
         </Form.Item>
       </FormModal>
+
+      <MappingViewDrawer open={!!viewId} mappingId={viewId} onClose={() => setViewId(null)} />
     </div>
   );
 }
