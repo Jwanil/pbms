@@ -77,6 +77,24 @@ const getProductById = async (id) => {
       packaging: { select: { packaging_id: true, packaging_name: true, size_unit: true, size_value: true } },
       creator: { select: { user_id: true, name: true } },
       updater: { select: { user_id: true, name: true } },
+      mappings: {
+        select: {
+          mapping_id: true,
+          role_type: true,
+          moq: true,
+          price_range_min: true,
+          price_range_max: true,
+          lead_time_days: true,
+          is_active: true,
+          company: {
+            select: {
+              company_id: true,
+              company_name: true,
+              company_type: true,
+            }
+          }
+        }
+      }
     }
   });
   if (!product) throw { statusCode: 404, message: 'Product not found', code: 'NOT_FOUND' };

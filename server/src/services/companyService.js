@@ -78,6 +78,23 @@ const getCompanyById = async (id) => {
           contact_number: true,
           email: true,
         }
+      },
+      mappings: {
+        select: {
+          mapping_id: true,
+          role_type: true,
+          is_active: true,
+          product: {
+            select: {
+              product_id: true,
+              product_name: true,
+              sku: true,
+            }
+          }
+        }
+      },
+      _count: {
+        select: { contacts: true }
       }
     }
   });

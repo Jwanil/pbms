@@ -73,12 +73,15 @@ const getContactById = async (id) => {
       status: true,
       created_at: true,
       updated_at: true,
-      company: { select: { company_id: true, company_name: true } },
-      branch: { select: { branch_id: true, branch_name: true } },
+      company: {
+        select: { company_id: true, company_name: true }
+      },
+      branch: {
+        select: { branch_id: true, branch_name: true, city: true, state: true, email: true }
+      },
       interests: {
         select: {
           id: true,
-          product_id: true,
           product: { select: { product_id: true, product_name: true, sku: true } }
         }
       }
