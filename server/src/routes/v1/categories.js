@@ -36,9 +36,13 @@
  *         description: Success
  */
 const { Router } = require('express');
-const { getCategoriesController, createCategoryController, updateCategoryController, deleteCategoryController } = require('../../controllers/masterController');
+const {
+  getCategoriesController, createCategoryController, updateCategoryController, deleteCategoryController,
+  exportCategoriesController, sampleCsvCategoriesController, importCategoriesController
+} = require('../../controllers/masterController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
+const uploadCsv = require('../../middleware/uploadCsv');
 
 const router = Router();
 
@@ -49,17 +53,9 @@ const router = Router();
  *   description: Product category master
  */
 
-/**
- * @swagger
- * /categories:
- *   get:
- *     summary: Get all categories
- *     tags: [Categories]
- *     responses:
- *       200:
- *         description: List of categories
- */
 router.get('/', verifyToken, roleGuard('categories', 'can_view'), getCategoriesController);
+router.get('/export', verifyToken, roleGuard('categories', 'can_view'), exportCategoriesController);
+router.get('/sample-csv', verifyToken, roleGuard('categories', 'can_view'), sampleCsvCategoriesController);
 
 /**
  * @swagger
@@ -85,6 +81,8 @@ router.get('/', verifyToken, roleGuard('categories', 'can_view'), getCategoriesC
  *         description: Name already exists
  */
 router.post('/', verifyToken, roleGuard('categories', 'can_create'), createCategoryController);
+router.post('/import', verifyToken, roleGuard('categories', 'can_create'), uploadCsv.single('file'), importCategoriesController);
+
 router.put('/:id', verifyToken, roleGuard('categories', 'can_edit'), updateCategoryController);
 router.delete('/:id', verifyToken, roleGuard('categories', 'can_delete'), deleteCategoryController);
 

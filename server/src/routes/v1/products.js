@@ -98,10 +98,11 @@ const { Router } = require('express');
 const {
   getProductsController, getProductByIdController, createProductController,
   updateProductController, deactivateProductController, reactivateProductController,
-  getFormDataController
+  getFormDataController, exportProductsController, sampleCsvProductsController, importProductsController
 } = require('../../controllers/productController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
+const uploadCsv = require('../../middleware/uploadCsv');
 
 const router = Router();
 
@@ -142,9 +143,12 @@ const router = Router();
  *         description: Paginated product list
  */
 router.get('/', verifyToken, roleGuard('products', 'can_view'), getProductsController);
+router.get('/export', verifyToken, roleGuard('products', 'can_view'), exportProductsController);
+router.get('/sample-csv', verifyToken, roleGuard('products', 'can_view'), sampleCsvProductsController);
 router.get('/form-data', verifyToken, roleGuard('products', 'can_view'), getFormDataController);
 router.get('/:id', verifyToken, roleGuard('products', 'can_view'), getProductByIdController);
 router.post('/', verifyToken, roleGuard('products', 'can_create'), createProductController);
+router.post('/import', verifyToken, roleGuard('products', 'can_create'), uploadCsv.single('file'), importProductsController);
 router.put('/:id', verifyToken, roleGuard('products', 'can_edit'), updateProductController);
 router.patch('/:id/deactivate', verifyToken, roleGuard('products', 'can_delete'), deactivateProductController);
 router.patch('/:id/reactivate', verifyToken, roleGuard('products', 'can_edit'), reactivateProductController);

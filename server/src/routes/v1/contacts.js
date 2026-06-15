@@ -109,10 +109,11 @@ const { Router } = require('express');
 const {
   getContactsController, getContactByIdController, createContactController,
   updateContactController, deactivateContactController, reactivateContactController,
-  getBranchesController
+  getBranchesController, exportContactsController, sampleCsvContactsController, importContactsController
 } = require('../../controllers/contactController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
+const uploadCsv = require('../../middleware/uploadCsv');
 
 const router = Router();
 
@@ -158,9 +159,12 @@ const router = Router();
 
 // IMPORTANT: /branches/:companyId must be defined BEFORE /:id to avoid route conflict
 router.get('/branches/:companyId', verifyToken, roleGuard('contacts', 'can_view'), getBranchesController);
+router.get('/export', verifyToken, roleGuard('contacts', 'can_view'), exportContactsController);
+router.get('/sample-csv', verifyToken, roleGuard('contacts', 'can_view'), sampleCsvContactsController);
 router.get('/', verifyToken, roleGuard('contacts', 'can_view'), getContactsController);
 router.get('/:id', verifyToken, roleGuard('contacts', 'can_view'), getContactByIdController);
 router.post('/', verifyToken, roleGuard('contacts', 'can_create'), createContactController);
+router.post('/import', verifyToken, roleGuard('contacts', 'can_create'), uploadCsv.single('file'), importContactsController);
 router.put('/:id', verifyToken, roleGuard('contacts', 'can_edit'), updateContactController);
 router.patch('/:id/deactivate', verifyToken, roleGuard('contacts', 'can_delete'), deactivateContactController);
 router.patch('/:id/reactivate', verifyToken, roleGuard('contacts', 'can_edit'), reactivateContactController);

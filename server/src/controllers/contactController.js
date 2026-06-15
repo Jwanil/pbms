@@ -142,8 +142,151 @@ const getBranchesController = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const Papa = require('papaparse');
+
+const exportContactsController = async (req, res, next) => {
+  try {
+    const contacts = await prisma.contact.findMany({
+      where: { status: 'ACTIVE' },
+      select: {
+        first_name: true,
+        last_name: true,
+        mobile: true,
+        alternate_mobile: true,
+        email: true,
+        contact_type: true,
+        designation: true,
+        preferred_language: true,
+        tags: true,
+        status: true,
+        company: { select: { company_name: true } },
+        branch: { select: { branch_name: true } }
+      }
+    });
+
+    const flatContacts = contacts.map(c => ({
+      first_name: c.first_name,
+      last_name: c.last_name,
+      mobile: c.mobile,
+      alternate_mobile: c.alternate_mobile,
+      email: c.email,
+      contact_type: c.contact_type,
+      designation: c.designation,
+      preferred_language: c.preferred_language,
+      tags: c.tags,
+      company_name: c.company?.company_name || '',
+      branch_name: c.branch?.branch_name || '',
+      status: c.status
+    }));
+
+    const csvString = Papa.unparse(flatContacts);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="contacts.csv"');
+    res.status(200).send(csvString);
+  } catch (err) { next(err); }
+};
+
+const sampleCsvContactsController = async (req, res, next) => {
+  try {
+    const headers = [
+      'first_name', 'last_name', 'mobile', 'alternate_mobile', 'email', 'contact_type',
+      'designation', 'preferred_language', 'tags', 'company_name', 'branch_name'
+    ];
+    const exampleRow = [
+      'Rajesh', 'Sharma', '9876543210', '9876543211', 'rajesh@sharma.com', 'BUYER',
+      'Purchase Manager', 'ENGLISH', 'chemical|supplier', 'Sharma Chemicals Pvt Ltd', 'Mumbai Branch'
+    ];
+    const csvString = Papa.unparse({ fields: headers, data: [exampleRow] });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="contacts_sample.csv"');
+    res.status(200).send(csvString);
+  } catch (err) { next(err); }
+};
+
+const importContactsController = async (req, res, next) => {
+  try {
+    if (!req.file) return sendError(res, 'No file uploaded', 400, [], 'VALIDATION_ERROR');
+
+    const csvText = req.file.buffer.toString('utf-8');
+    const { data, errors } = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+
+    if (errors.length > 0) {
+      return sendError(res, 'CSV parsing failed', 400, errors.map(e => ({ field: 'file', message: e.message })), 'PARSE_ERROR');
+    }
+
+    const requiredHeaders = ['first_name', 'mobile'];
+    const actualHeaders = Object.keys(data[0] || {});
+    const missingHeaders = requiredHeaders.filter(h => !actualHeaders.includes(h));
+    if (missingHeaders.length > 0) {
+      return sendError(res, `CSV is missing required columns: ${missingHeaders.join(', ')}`, 400, [], 'VALIDATION_ERROR');
+    }
+
+    let imported = 0;
+    const skipped = [];
+
+    // Pre-fetch companies for fast lookup
+    const companies = await prisma.company.findMany({ include: { branches: true } });
+
+    for (const [index, row] of data.entries()) {
+      try {
+        let company_id = null;
+        let branch_id = null;
+
+        if (row.company_name) {
+          const comp = companies.find(c => c.company_name.toLowerCase() === row.company_name.toLowerCase());
+          if (comp) {
+            company_id = comp.company_id;
+            if (row.branch_name) {
+              const br = comp.branches.find(b => b.branch_name.toLowerCase() === row.branch_name.toLowerCase());
+              if (br) branch_id = br.branch_id;
+              else throw new Error(`Branch '${row.branch_name}' not found in company '${row.company_name}'`);
+            }
+          } else {
+            throw new Error(`Company '${row.company_name}' not found`);
+          }
+        }
+
+        const payload = {
+          first_name: row.first_name,
+          last_name: row.last_name || null,
+          mobile: row.mobile,
+          alternate_mobile: row.alternate_mobile || null,
+          email: row.email || null,
+          contact_type: row.contact_type || null,
+          designation: row.designation || null,
+          preferred_language: row.preferred_language || null,
+          tags: row.tags ? row.tags.split('|').map(t => t.trim()) : [],
+          company_id,
+          branch_id,
+          product_ids: []
+        };
+
+        const parsed = contactSchema.safeParse(payload);
+        if (!parsed.success) {
+          throw new Error(parsed.error.issues.map(i => i.message).join(', '));
+        }
+
+        const cleanData = { ...parsed.data };
+        if (cleanData.email === '') cleanData.email = null;
+        if (cleanData.alternate_mobile === '') cleanData.alternate_mobile = null;
+        if (typeof cleanData.tags === 'string') {
+            try { cleanData.tags = JSON.parse(cleanData.tags); } catch (e) {}
+        }
+
+        const created = await contactService.createContact(cleanData);
+        await writeAuditLog(prisma, req.user.user_id, 'contacts', 'CREATE', created.contact_id, null, { source: 'CSV_IMPORT' }, req);
+        imported++;
+      } catch (err) {
+        skipped.push({ row: index + 2, reason: err.message });
+      }
+    }
+
+    return sendSuccess(res, { imported, skipped: skipped.length, errors: skipped }, `Imported ${imported} records, skipped ${skipped.length}`);
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getContactsController, getContactByIdController, createContactController,
   updateContactController, deactivateContactController, reactivateContactController,
-  getBranchesController
+  getBranchesController, exportContactsController, sampleCsvContactsController, importContactsController
 };

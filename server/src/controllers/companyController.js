@@ -188,7 +188,109 @@ const reactivateCompanyController = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const Papa = require('papaparse');
+
+const exportCompaniesController = async (req, res, next) => {
+  try {
+    const companies = await prisma.company.findMany({
+      where: { status: 'ACTIVE' },
+      select: {
+        company_name: true,
+        company_type: true,
+        email: true,
+        phone: true,
+        gst_number: true,
+        pan_number: true,
+        cin_number: true,
+        website: true,
+        industry_type: true,
+        address: true,
+        remarks: true,
+        status: true
+      }
+    });
+
+    const csvString = Papa.unparse(companies);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="companies.csv"');
+    res.status(200).send(csvString);
+  } catch (err) { next(err); }
+};
+
+const sampleCsvCompaniesController = async (req, res, next) => {
+  try {
+    const headers = [
+      'company_name', 'company_type', 'email', 'phone', 'gst_number', 'pan_number',
+      'cin_number', 'website', 'industry_type', 'address', 'remarks'
+    ];
+    const exampleRow = [
+      'Sharma Chemicals Pvt Ltd', 'MANUFACTURER', 'info@sharma.com', '9876543210', '22AAAAA0000A1Z5', 'ABCDE1234F',
+      'U24100MH2010PTC123456', 'https://sharma.com', 'Chemical Manufacturing', '123 MIDC, Pune', 'Key supplier'
+    ];
+    const csvString = Papa.unparse({ fields: headers, data: [exampleRow] });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="companies_sample.csv"');
+    res.status(200).send(csvString);
+  } catch (err) { next(err); }
+};
+
+const importCompaniesController = async (req, res, next) => {
+  try {
+    if (!req.file) return sendError(res, 'No file uploaded', 400, [], 'VALIDATION_ERROR');
+
+    const csvText = req.file.buffer.toString('utf-8');
+    const { data, errors } = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+
+    if (errors.length > 0) {
+      return sendError(res, 'CSV parsing failed', 400, errors.map(e => ({ field: 'file', message: e.message })), 'PARSE_ERROR');
+    }
+
+    const requiredHeaders = ['company_name', 'company_type'];
+    const actualHeaders = Object.keys(data[0] || {});
+    const missingHeaders = requiredHeaders.filter(h => !actualHeaders.includes(h));
+    if (missingHeaders.length > 0) {
+      return sendError(res, `CSV is missing required columns: ${missingHeaders.join(', ')}`, 400, [], 'VALIDATION_ERROR');
+    }
+
+    let imported = 0;
+    const skipped = [];
+
+    for (const [index, row] of data.entries()) {
+      try {
+        const payload = {
+          company_name: row.company_name,
+          company_type: row.company_type,
+          email: row.email || null,
+          phone: row.phone || null,
+          gst_number: row.gst_number || null,
+          pan_number: row.pan_number || null,
+          cin_number: row.cin_number || null,
+          website: row.website || null,
+          industry_type: row.industry_type || null,
+          address: row.address || null,
+          remarks: row.remarks || null,
+          branches: []
+        };
+
+        const parsed = companySchema.safeParse(payload);
+        if (!parsed.success) {
+          throw new Error(parsed.error.issues.map(i => i.message).join(', '));
+        }
+
+        const created = await companyService.createCompany(parsed.data);
+        await writeAuditLog(prisma, req.user.user_id, 'companies', 'CREATE', created.company_id, null, { source: 'CSV_IMPORT' }, req);
+        imported++;
+      } catch (err) {
+        skipped.push({ row: index + 2, reason: err.message });
+      }
+    }
+
+    return sendSuccess(res, { imported, skipped: skipped.length, errors: skipped }, `Imported ${imported} records, skipped ${skipped.length}`);
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getCompaniesController, getCompanyByIdController, createCompanyController,
-  updateCompanyController, deactivateCompanyController, reactivateCompanyController
+  updateCompanyController, deactivateCompanyController, reactivateCompanyController,
+  exportCompaniesController, sampleCsvCompaniesController, importCompaniesController
 };

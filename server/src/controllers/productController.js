@@ -132,8 +132,169 @@ const getFormDataController = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const Papa = require('papaparse');
+
+const exportProductsController = async (req, res, next) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { status: 'ACTIVE' },
+      select: {
+        product_name: true,
+        sku: true,
+        composition: true,
+        unit_of_measure: true,
+        shelf_life: true,
+        molecular_formula: true,
+        molecular_weight: true,
+        purity: true,
+        process_type: true,
+        un_number: true,
+        industry_application: true,
+        hsn_code: true,
+        cas_number: true,
+        description: true,
+        status: true,
+        category: { select: { category_name: true } },
+        grade: { select: { grade_name: true } },
+        packaging: { select: { packaging_name: true } }
+      }
+    });
+
+    const flatProducts = products.map(p => ({
+      product_name: p.product_name,
+      sku: p.sku,
+      composition: p.composition,
+      category_name: p.category?.category_name || '',
+      grade_name: p.grade?.grade_name || '',
+      packaging_name: p.packaging?.packaging_name || '',
+      unit_of_measure: p.unit_of_measure,
+      shelf_life: p.shelf_life,
+      molecular_formula: p.molecular_formula,
+      molecular_weight: p.molecular_weight,
+      purity: p.purity,
+      process_type: p.process_type,
+      un_number: p.un_number,
+      industry_application: p.industry_application,
+      hsn_code: p.hsn_code,
+      cas_number: p.cas_number,
+      description: p.description,
+      status: p.status
+    }));
+
+    const csvString = Papa.unparse(flatProducts);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="products.csv"');
+    res.status(200).send(csvString);
+  } catch (err) { next(err); }
+};
+
+const sampleCsvProductsController = async (req, res, next) => {
+  try {
+    const headers = [
+      'product_name', 'sku', 'composition', 'category_name', 'grade_name', 'packaging_name',
+      'unit_of_measure', 'shelf_life', 'molecular_formula', 'molecular_weight', 'purity',
+      'process_type', 'un_number', 'industry_application', 'hsn_code', 'cas_number', 'description'
+    ];
+    const exampleRow = [
+      'Acetone', 'ACT-001', 'Dimethyl ketone', 'Solvents', 'Industrial', 'HDPE Drum',
+      'KG', '24 months', 'C3H6O', '58.08', '99.5', 'Distillation',
+      'UN1090', 'Paint thinners and adhesives', '2914 11 00', '67-64-1', 'High purity industrial grade acetone'
+    ];
+    const csvString = Papa.unparse({ fields: headers, data: [exampleRow] });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="products_sample.csv"');
+    res.status(200).send(csvString);
+  } catch (err) { next(err); }
+};
+
+const importProductsController = async (req, res, next) => {
+  try {
+    if (!req.file) return sendError(res, 'No file uploaded', 400, [], 'VALIDATION_ERROR');
+
+    const csvText = req.file.buffer.toString('utf-8');
+    const { data, errors } = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+
+    if (errors.length > 0) {
+      return sendError(res, 'CSV parsing failed', 400, errors.map(e => ({ field: 'file', message: e.message })), 'PARSE_ERROR');
+    }
+
+    const requiredHeaders = ['product_name', 'sku'];
+    const actualHeaders = Object.keys(data[0] || {});
+    const missingHeaders = requiredHeaders.filter(h => !actualHeaders.includes(h));
+    if (missingHeaders.length > 0) {
+      return sendError(res, `CSV is missing required columns: ${missingHeaders.join(', ')}`, 400, [], 'VALIDATION_ERROR');
+    }
+
+    let imported = 0;
+    const skipped = [];
+
+    // Pre-fetch masters for fast lookup
+    const categories = await prisma.category.findMany();
+    const grades = await prisma.grade.findMany();
+    const packagings = await prisma.packaging.findMany();
+
+    for (const [index, row] of data.entries()) {
+      try {
+        let category_id = null;
+        if (row.category_name) {
+          const cat = categories.find(c => c.category_name.toLowerCase() === row.category_name.toLowerCase());
+          if (cat) category_id = cat.category_id;
+          else throw new Error(`Category '${row.category_name}' not found`);
+        }
+
+        let grade_id = null;
+        if (row.grade_name) {
+          const grd = grades.find(g => g.grade_name.toLowerCase() === row.grade_name.toLowerCase());
+          if (grd) grade_id = grd.grade_id;
+          else throw new Error(`Grade '${row.grade_name}' not found`);
+        }
+
+        let packaging_id = null;
+        if (row.packaging_name) {
+          const pkg = packagings.find(p => p.packaging_name.toLowerCase() === row.packaging_name.toLowerCase());
+          if (pkg) packaging_id = pkg.packaging_id;
+          else throw new Error(`Packaging '${row.packaging_name}' not found`);
+        }
+
+        const payload = {
+          product_name: row.product_name,
+          sku: row.sku,
+          composition: row.composition || null,
+          category_id,
+          grade_id,
+          packaging_id,
+          unit_of_measure: row.unit_of_measure || null,
+          shelf_life: row.shelf_life || null,
+          molecular_formula: row.molecular_formula || null,
+          molecular_weight: row.molecular_weight ? parseFloat(row.molecular_weight) : null,
+          purity: row.purity ? parseFloat(row.purity) : null,
+          process_type: row.process_type || null,
+          un_number: row.un_number || null,
+          industry_application: row.industry_application || null,
+          hsn_code: row.hsn_code || null,
+          cas_number: row.cas_number || null,
+          description: row.description || null
+        };
+
+        const parsed = productSchema.safeParse(payload);
+        if (!parsed.success) {
+          throw new Error(parsed.error.issues.map(i => i.message).join(', '));
+        }
+
+        const created = await productService.createProduct(parsed.data, req.user.user_id);
+        await writeAuditLog(prisma, req.user.user_id, 'products', 'CREATE', created.product_id, null, { source: 'CSV_IMPORT' }, req);
+        imported++;
+      } catch (err) {
+        skipped.push({ row: index + 2, reason: err.message });
+      }
+    }
+
+    return sendSuccess(res, { imported, skipped: skipped.length, errors: skipped }, `Imported ${imported} records, skipped ${skipped.length}`);
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getProductsController, getProductByIdController, createProductController,
   updateProductController, deactivateProductController, reactivateProductController,
-  getFormDataController
+  getFormDataController, exportProductsController, sampleCsvProductsController, importProductsController
 };

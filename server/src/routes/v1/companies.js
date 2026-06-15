@@ -86,10 +86,12 @@
 const { Router } = require('express');
 const {
   getCompaniesController, getCompanyByIdController, createCompanyController,
-  updateCompanyController, deactivateCompanyController, reactivateCompanyController
+  updateCompanyController, deactivateCompanyController, reactivateCompanyController,
+  exportCompaniesController, sampleCsvCompaniesController, importCompaniesController
 } = require('../../controllers/companyController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
+const uploadCsv = require('../../middleware/uploadCsv');
 
 const router = Router();
 
@@ -127,8 +129,11 @@ const router = Router();
  *         description: Paginated company list
  */
 router.get('/', verifyToken, roleGuard('companies', 'can_view'), getCompaniesController);
+router.get('/export', verifyToken, roleGuard('companies', 'can_view'), exportCompaniesController);
+router.get('/sample-csv', verifyToken, roleGuard('companies', 'can_view'), sampleCsvCompaniesController);
 router.get('/:id', verifyToken, roleGuard('companies', 'can_view'), getCompanyByIdController);
 router.post('/', verifyToken, roleGuard('companies', 'can_create'), createCompanyController);
+router.post('/import', verifyToken, roleGuard('companies', 'can_create'), uploadCsv.single('file'), importCompaniesController);
 router.put('/:id', verifyToken, roleGuard('companies', 'can_edit'), updateCompanyController);
 router.patch('/:id/deactivate', verifyToken, roleGuard('companies', 'can_delete'), deactivateCompanyController);
 router.patch('/:id/reactivate', verifyToken, roleGuard('companies', 'can_edit'), reactivateCompanyController);
