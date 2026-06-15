@@ -27,7 +27,7 @@ const getProfile = async (req, res, next) => {
       return sendError(res, 404, 'User not found', 'NOT_FOUND');
     }
 
-    return sendSuccess(res, 'Profile fetched successfully', user);
+    return sendSuccess(res, user, 'Profile fetched successfully');
   } catch (error) {
     next(error);
   }
@@ -61,8 +61,7 @@ const updateProfile = async (req, res, next) => {
     await writeAuditLog(req, 'UPDATE', 'USERS', req.user.user_id, {
       name, mobile
     });
-
-    return sendSuccess(res, 'Profile updated successfully', user);
+    return sendSuccess(res, user, 'Profile updated successfully');
   } catch (error) {
     next(error);
   }
@@ -97,8 +96,7 @@ const changePassword = async (req, res, next) => {
     });
 
     await writeAuditLog(req, 'UPDATE', 'USERS_PASSWORD', req.user.user_id, {});
-
-    return sendSuccess(res, 'Password changed successfully', {});
+    return sendSuccess(res, {}, 'Password changed successfully');
   } catch (error) {
     next(error);
   }
