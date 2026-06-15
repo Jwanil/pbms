@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, Select, Tag, Form, Tabs, Popconfirm, Row, Col, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined, UploadOutlined } from '@ant-design/icons';
+import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
 import ContactViewDrawer from '../../components/ContactViewDrawer';
 import ColumnSelector from '../../components/ColumnSelector';
 import StatusBadge from '../../components/StatusBadge';
 import PermissionGuard from '../../components/PermissionGuard';
+import ExportCsvButton from '../../components/ExportCsvButton';
+import BulkImportModal from '../../components/BulkImportModal';
 import {
   useContacts, useContact,
   useCreateContact, useUpdateContact,
@@ -31,6 +34,7 @@ const LANGUAGES = [
 ];
 
 function ContactsPage() {
+  const queryClient = useQueryClient();
   const [form] = Form.useForm();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -39,6 +43,7 @@ function ContactsPage() {
   const [filterProduct, setFilterProduct] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
   const [viewId, setViewId] = useState(null);
@@ -105,6 +110,10 @@ function ContactsPage() {
         }
       });
     }
+  };
+
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['contacts'] });
   };
 
   const handleCompanyChange = (companyId) => {
@@ -270,11 +279,17 @@ function ContactsPage() {
         subtitle="Manage buyer and company contacts"
         breadcrumbs={['Contacts']}
         extra={
-          <PermissionGuard module="contacts" action="can_create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>
-              Add Contact
-            </Button>
-          </PermissionGuard>
+          <Space>
+            <ExportCsvButton module="contacts" moduleName="Contacts" />
+            <PermissionGuard module="contacts" action="can_create">
+              <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>
+            </PermissionGuard>
+            <PermissionGuard module="contacts" action="can_create">
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>
+                Add Contact
+              </Button>
+            </PermissionGuard>
+          </Space>
         }
       />
 
@@ -321,6 +336,14 @@ function ContactsPage() {
       </FormModal>
 
       <ContactViewDrawer open={!!viewId} contactId={viewId} onClose={() => setViewId(null)} />
+
+      <BulkImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        module="contacts"
+        moduleName="Contacts"
+        onImportSuccess={handleImportSuccess}
+      />
     </div>
   );
 }

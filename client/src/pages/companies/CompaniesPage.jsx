@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, InputNumber, Select, Tag, Form, Tabs, Popconfirm, Spin, Card, Row, Col, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, DeleteOutlined, EyeOutlined, UploadOutlined } from '@ant-design/icons';
+import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
 import CompanyViewDrawer from '../../components/CompanyViewDrawer';
 import ColumnSelector from '../../components/ColumnSelector';
 import StatusBadge from '../../components/StatusBadge';
 import PermissionGuard from '../../components/PermissionGuard';
+import ExportCsvButton from '../../components/ExportCsvButton';
+import BulkImportModal from '../../components/BulkImportModal';
 import {
   useCompanies, useCompany,
   useCreateCompany, useUpdateCompany,
@@ -24,12 +27,14 @@ const COMPANY_TYPES = [
 ];
 
 function CompaniesPage() {
+  const queryClient = useQueryClient();
   const [form] = Form.useForm();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [viewId, setViewId] = useState(null);
 
@@ -84,6 +89,10 @@ function CompaniesPage() {
         }
       });
     }
+  };
+
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['companies'] });
   };
 
   const allColumns = [
@@ -197,11 +206,17 @@ function CompaniesPage() {
         subtitle="Manage manufacturers, suppliers, buyers and distributors"
         breadcrumbs={['Companies']}
         extra={
-          <PermissionGuard module="companies" action="can_create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>
-              Add Company
-            </Button>
-          </PermissionGuard>
+          <Space>
+            <ExportCsvButton module="companies" moduleName="Companies" />
+            <PermissionGuard module="companies" action="can_create">
+              <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>
+            </PermissionGuard>
+            <PermissionGuard module="companies" action="can_create">
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>
+                Add Company
+              </Button>
+            </PermissionGuard>
+          </Space>
         }
       />
 
@@ -242,6 +257,14 @@ function CompaniesPage() {
       </FormModal>
 
       <CompanyViewDrawer open={!!viewId} companyId={viewId} onClose={() => setViewId(null)} />
+
+      <BulkImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        module="companies"
+        moduleName="Companies"
+        onImportSuccess={handleImportSuccess}
+      />
     </div>
   );
 }

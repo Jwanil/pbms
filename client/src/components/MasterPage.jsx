@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Button, Form, Input, InputNumber, Space, Popconfirm, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons';
+import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from './PageHeader';
 import DataTable from './DataTable';
 import FormModal from './FormModal';
 import PermissionGuard from './PermissionGuard';
+import ExportCsvButton from './ExportCsvButton';
+import BulkImportModal from './BulkImportModal';
 
 import useFormErrors from '../hooks/useFormErrors';
 import { message } from 'antd';
@@ -24,7 +27,9 @@ function MasterPage({
   onDelete,
   isSubmitting = false,
 }) {
+  const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [form] = Form.useForm();
   const { applyServerErrors } = useFormErrors(form);
@@ -39,6 +44,10 @@ function MasterPage({
     setEditingRecord(record);
     form.setFieldsValue(record);
     setModalOpen(true);
+  };
+
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: [module] });
   };
 
   const handleSubmit = (values) => {
@@ -120,11 +129,17 @@ function MasterPage({
         subtitle={subtitle}
         breadcrumbs={['Masters', title]}
         extra={
-          <PermissionGuard module={module} action="can_create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={openAdd} style={{ background: '#1F3A6E' }}>
-              Add {title.replace(' Master', '')}
-            </Button>
-          </PermissionGuard>
+          <Space>
+            <ExportCsvButton module={module} moduleName={title} />
+            <PermissionGuard module={module} action="can_create">
+              <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>
+            </PermissionGuard>
+            <PermissionGuard module={module} action="can_create">
+              <Button type="primary" icon={<PlusOutlined />} onClick={openAdd} style={{ background: '#1F3A6E' }}>
+                Add {title.replace(' Master', '')}
+              </Button>
+            </PermissionGuard>
+          </Space>
         }
       />
 
@@ -177,6 +192,14 @@ function MasterPage({
           </Form.Item>
         ))}
       </FormModal>
+
+      <BulkImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        module={module}
+        moduleName={title}
+        onImportSuccess={handleImportSuccess}
+      />
     </div>
   );
 }

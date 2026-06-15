@@ -84,6 +84,13 @@ function AppLayout() {
 
   const userMenuItems = [
     {
+      key: '/profile',
+      icon: <UserOutlined />,
+      label: 'My Profile',
+      onClick: () => navigate('/profile'),
+    },
+    { type: 'divider' },
+    {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: isLoggingOut ? 'Logging out...' : 'Logout',

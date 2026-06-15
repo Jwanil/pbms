@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, Select, Tag, Form, Tabs, InputNumber, Popconfirm, Spin } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined, UploadOutlined } from '@ant-design/icons';
+import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
 import ProductViewDrawer from '../../components/ProductViewDrawer';
 import ColumnSelector from '../../components/ColumnSelector';
 import StatusBadge from '../../components/StatusBadge';
 import PermissionGuard from '../../components/PermissionGuard';
+import ExportCsvButton from '../../components/ExportCsvButton';
+import BulkImportModal from '../../components/BulkImportModal';
 import {
   useProducts, useProduct, useProductFormData,
   useCreateProduct, useUpdateProduct,
@@ -17,6 +20,7 @@ import useColumnVisibility from '../../hooks/useColumnVisibility';
 import { message } from 'antd';
 
 function ProductsPage() {
+  const queryClient = useQueryClient();
   const [form] = Form.useForm();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -24,6 +28,7 @@ function ProductsPage() {
   const [filterGrade, setFilterGrade] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [viewId, setViewId] = useState(null);
 
@@ -76,6 +81,10 @@ function ProductsPage() {
         }
       });
     }
+  };
+
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['products'] });
   };
 
   const allColumns = [
@@ -202,11 +211,17 @@ function ProductsPage() {
         subtitle="Manage product catalog"
         breadcrumbs={['Products']}
         extra={
-          <PermissionGuard module="products" action="can_create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>
-              Add Product
-            </Button>
-          </PermissionGuard>
+          <Space>
+            <ExportCsvButton module="products" moduleName="Products" />
+            <PermissionGuard module="products" action="can_create">
+              <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>
+            </PermissionGuard>
+            <PermissionGuard module="products" action="can_create">
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>
+                Add Product
+              </Button>
+            </PermissionGuard>
+          </Space>
         }
       />
 
@@ -253,6 +268,14 @@ function ProductsPage() {
       </FormModal>
 
       <ProductViewDrawer open={!!viewId} productId={viewId} onClose={() => setViewId(null)} />
+      
+      <BulkImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        module="products"
+        moduleName="Products"
+        onImportSuccess={handleImportSuccess}
+      />
     </div>
   );
 }
