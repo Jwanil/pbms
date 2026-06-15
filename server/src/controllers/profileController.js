@@ -6,14 +6,17 @@ const { writeAuditLog } = require('../utils/auditLog');
 
 const getProfile = async (req, res, next) => {
   try {
-    const user = await prisma.users.findUnique({
+    const user = await prisma.user.findUnique({
       where: { user_id: req.user.user_id },
       select: {
         user_id: true,
-        first_name: true,
-        last_name: true,
+        name: true,
         email: true,
         mobile: true,
+        username: true,
+        department: {
+          select: { department_name: true }
+        },
         role: {
           select: { role_name: true }
         }
@@ -32,21 +35,23 @@ const getProfile = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
   try {
-    const { first_name, last_name, mobile } = req.body;
+    const { name, mobile } = req.body;
 
-    const user = await prisma.users.update({
+    const user = await prisma.user.update({
       where: { user_id: req.user.user_id },
       data: {
-        first_name,
-        last_name,
+        name,
         mobile
       },
       select: {
         user_id: true,
-        first_name: true,
-        last_name: true,
+        name: true,
         email: true,
         mobile: true,
+        username: true,
+        department: {
+          select: { department_name: true }
+        },
         role: {
           select: { role_name: true }
         }
@@ -54,7 +59,7 @@ const updateProfile = async (req, res, next) => {
     });
 
     await writeAuditLog(req, 'UPDATE', 'USERS', req.user.user_id, {
-      first_name, last_name, mobile
+      name, mobile
     });
 
     return sendSuccess(res, 'Profile updated successfully', user);
@@ -71,7 +76,7 @@ const changePassword = async (req, res, next) => {
       return sendError(res, 400, 'Current and new passwords are required', 'VALIDATION_ERROR');
     }
 
-    const user = await prisma.users.findUnique({
+    const user = await prisma.user.findUnique({
       where: { user_id: req.user.user_id }
     });
 
@@ -86,7 +91,7 @@ const changePassword = async (req, res, next) => {
 
     const password_hash = await bcrypt.hash(new_password, 12);
 
-    await prisma.users.update({
+    await prisma.user.update({
       where: { user_id: req.user.user_id },
       data: { password_hash }
     });

@@ -21,8 +21,7 @@ function ProfilePage() {
   useEffect(() => {
     if (profile) {
       profileForm.setFieldsValue({
-        first_name: profile.first_name,
-        last_name: profile.last_name,
+        name: profile.name,
         mobile: profile.mobile,
       });
     }
@@ -63,14 +62,32 @@ function ProfilePage() {
             title={<Space><UserOutlined /> Personal Information</Space>} 
             bordered={false}
           >
-            <div style={{ marginBottom: 24 }}>
-              <Text type="secondary">Role</Text>
-              <div><Text strong style={{ fontSize: 16 }}>{profile?.role?.role_name || '—'}</Text></div>
-            </div>
-            <div style={{ marginBottom: 24 }}>
-              <Text type="secondary">Email Address</Text>
-              <div><Text strong style={{ fontSize: 16 }}>{profile?.email}</Text></div>
-            </div>
+            <Row gutter={[16, 16]}>
+              <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <Text type="secondary">Role</Text>
+                  <div><Text strong style={{ fontSize: 16 }}>{profile?.role?.role_name || '—'}</Text></div>
+                </div>
+              </Col>
+              <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <Text type="secondary">Department</Text>
+                  <div><Text strong style={{ fontSize: 16 }}>{profile?.department?.department_name || '—'}</Text></div>
+                </div>
+              </Col>
+              <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <Text type="secondary">Email Address</Text>
+                  <div><Text strong style={{ fontSize: 16 }}>{profile?.email || '—'}</Text></div>
+                </div>
+              </Col>
+              <Col span={12}>
+                <div style={{ marginBottom: 16 }}>
+                  <Text type="secondary">Username</Text>
+                  <div><Text strong style={{ fontSize: 16 }}>{profile?.username || '—'}</Text></div>
+                </div>
+              </Col>
+            </Row>
             
             <Divider />
 
@@ -79,25 +96,13 @@ function ProfilePage() {
               layout="vertical"
               onFinish={handleUpdateProfile}
             >
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item 
-                    name="first_name" 
-                    label="First Name" 
-                    rules={[{ required: true, message: 'First name is required' }]}
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item 
-                    name="last_name" 
-                    label="Last Name"
-                  >
-                    <Input />
-                  </Form.Item>
-                </Col>
-              </Row>
+              <Form.Item 
+                name="name" 
+                label="Full Name" 
+                rules={[{ required: true, message: 'Full name is required' }]}
+              >
+                <Input />
+              </Form.Item>
               <Form.Item 
                 name="mobile" 
                 label="Mobile Number"
