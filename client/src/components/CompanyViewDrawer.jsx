@@ -1,12 +1,14 @@
 import React from 'react';
 import { Tabs, Tag, Table, Divider, Typography, Row, Col } from 'antd';
 import {
-  InfoCircleOutlined, BankOutlined, ApartmentOutlined,
+  InfoCircleOutlined, BankOutlined, ApartmentOutlined, FileOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import ViewDrawer from './ViewDrawer';
 import StatusBadge from './StatusBadge';
 import { useCompany } from '../api/companiesApi';
+import DocumentsPanel from './DocumentsPanel';
+import useAuthStore from '../store/authStore';
 
 const { Text, Title } = Typography;
 
@@ -46,6 +48,7 @@ const COMPANY_TYPE_COLORS = {
 
 const CompanyViewDrawer = ({ companyId, open, onClose }) => {
   const { data: company, isLoading } = useCompany(companyId);
+  const currentUser = useAuthStore((state) => state.user);
 
   if (!company) return <ViewDrawer open={open} onClose={onClose} loading={isLoading} title="Company Details" />;
 
@@ -148,6 +151,20 @@ const CompanyViewDrawer = ({ companyId, open, onClose }) => {
             locale={{ emptyText: 'No products mapped' }}
             columns={productColumns}
             style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e8edf5' }}
+          />
+        </div>
+      ),
+    },
+    {
+      key: 'documents',
+      label: <span><FileOutlined style={{ marginRight: 6 }} />Documents</span>,
+      children: (
+        <div>
+          <SectionTitle icon={<FileOutlined />} title="Company Documents" />
+          <DocumentsPanel 
+            entityType="COMPANY" 
+            entityId={company.company_id} 
+            canUpload={company.created_by === currentUser?.user_id || currentUser?.role?.role_name === 'SUPER_ADMIN'}
           />
         </div>
       ),

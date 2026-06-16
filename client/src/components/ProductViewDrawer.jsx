@@ -1,12 +1,14 @@
 import React from 'react';
 import { Tabs, Tag, Table, Divider, Typography, Row, Col, Card } from 'antd';
 import {
-  InfoCircleOutlined, ShopOutlined, BarcodeOutlined, AppstoreOutlined
+  InfoCircleOutlined, ShopOutlined, BarcodeOutlined, AppstoreOutlined, FileOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import ViewDrawer from './ViewDrawer';
 import StatusBadge from './StatusBadge';
 import { useProduct } from '../api/productsApi';
+import DocumentsPanel from './DocumentsPanel';
+import useAuthStore from '../store/authStore';
 
 const { Text, Title } = Typography;
 
@@ -43,6 +45,7 @@ const InfoGrid = ({ items }) => (
 
 const ProductViewDrawer = ({ productId, open, onClose }) => {
   const { data: product, isLoading } = useProduct(productId);
+  const currentUser = useAuthStore((state) => state.user);
 
   if (!product) return <ViewDrawer open={open} onClose={onClose} loading={isLoading} title="Product Details" width={1000} />;
 
@@ -146,6 +149,22 @@ const ProductViewDrawer = ({ productId, open, onClose }) => {
         </div>
       ),
     },
+    {
+      key: 'documents',
+      label: (
+        <span style={{ fontSize: 15, padding: '0 8px' }}><FileOutlined style={{ marginRight: 8 }} />Documents</span>
+      ),
+      children: (
+        <div style={{ padding: '8px 0' }}>
+          <SectionTitle icon={<FileOutlined />} title="Product Documents" />
+          <DocumentsPanel 
+            entityType="PRODUCT" 
+            entityId={product.product_id} 
+            canUpload={product.created_by === currentUser?.user_id || currentUser?.role?.role_name === 'SUPER_ADMIN'}
+          />
+        </div>
+      )
+    }
   ];
 
   return (
