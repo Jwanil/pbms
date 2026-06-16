@@ -131,8 +131,10 @@ model User {
   department       Department? @relation(fields: [department_id], references: [department_id])
   products_created Product[]   @relation("ProductCreatedBy")
   products_updated Product[]   @relation("ProductUpdatedBy")
+  companies_created Company[]  @relation("CompanyCreatedBy")
   audit_logs       AuditLog[]
   permissions      Permission[]
+  documents        Document[]
 
   @@index([email])
   @@index([username])
@@ -196,9 +198,11 @@ model Company {
   website       String?
   industry_type String?
   status        Status      @default(ACTIVE)
+  created_by    Int?
   created_at    DateTime    @default(now())
   updated_at    DateTime    @updatedAt
 
+  creator  User?    @relation("CompanyCreatedBy", fields: [created_by], references: [user_id])
   branches Branch[]
   contacts Contact[]
   mappings CompanyProductMapping[]
@@ -321,4 +325,20 @@ model AuditLog {
   @@index([action_type])
   @@index([created_at])
   @@index([user_id])
+}
+
+// --- DOCUMENTS ---
+
+model Document {
+  document_id   Int      @id @default(autoincrement())
+  entity_type   String   // 'COMPANY' or 'PRODUCT'
+  entity_id     Int
+  file_name     String
+  file_url      String
+  uploaded_by   Int
+  uploaded_at   DateTime @default(now())
+
+  uploader      User     @relation(fields: [uploaded_by], references: [user_id])
+
+  @@index([entity_type, entity_id])
 }
