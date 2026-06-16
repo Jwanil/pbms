@@ -13,6 +13,7 @@ const companiesRouter = require('./companies');
 const mappingsRouter = require('./mappings');
 const contactsRouter = require('./contacts');
 const dashboardRouter = require('./dashboard');
+const documentsRouter = require('./documents');
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use('/companies', companiesRouter);
 router.use('/mappings', mappingsRouter);
 router.use('/contacts', contactsRouter);
 router.use('/dashboard', dashboardRouter);
+router.use('/documents', documentsRouter);
 
 module.exports = router;

@@ -32,6 +32,9 @@ app.use(express.urlencoded({ extended: true }));
 // Swagger docs
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Serve uploaded documents statically
+app.use('/uploads', express.static(require('path').join(__dirname, '../../uploads')));
+
 // API v1 routes
 app.use('/api/v1', v1Routes);
 
