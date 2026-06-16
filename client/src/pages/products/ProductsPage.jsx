@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Space, Input, Select, Tag, Form, Tabs, InputNumber, Popconfirm, Spin } from 'antd';
+import { Table, Button, Space, Input, Select, Tag, Form, Tabs, InputNumber, Popconfirm, Spin, Divider } from 'antd';
 import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined, UploadOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../../components/PageHeader';
@@ -15,6 +15,7 @@ import {
   useCreateProduct, useUpdateProduct,
   useDeactivateProduct, useReactivateProduct
 } from '../../api/productsApi';
+import { useUploadDocument } from '../../api/documentsApi';
 import useFormErrors from '../../hooks/useFormErrors';
 import useColumnVisibility from '../../hooks/useColumnVisibility';
 import { message } from 'antd';
@@ -39,8 +40,11 @@ function ProductsPage() {
   const { mutate: update, isPending: updating } = useUpdateProduct();
   const { mutate: deactivate } = useDeactivateProduct();
   const { mutate: reactivate } = useReactivateProduct();
+  const { mutateAsync: uploadDoc } = useUploadDocument();
 
   const { applyServerErrors } = useFormErrors(form);
+
+  const [uploadFiles, setUploadFiles] = useState([]);
 
   useEffect(() => {
     if (editData && editingId) {
@@ -51,6 +55,7 @@ function ProductsPage() {
   const handleAdd = () => {
     setEditingId(null);
     form.resetFields();
+    setUploadFiles([]);
     setModalOpen(true);
   };
 
@@ -72,7 +77,20 @@ function ProductsPage() {
       });
     } else {
       create(values, {
-        onSuccess: () => { setModalOpen(false); },
+        onSuccess: async (res) => { 
+          const productId = res?.data?.data?.product_id;
+          if (productId && uploadFiles.length > 0) {
+            for (let file of uploadFiles) {
+              const formData = new FormData();
+              formData.append('file', file.originFileObj || file);
+              formData.append('entity_type', 'PRODUCT');
+              formData.append('entity_id', productId);
+              try { await uploadDoc(formData); } catch (e) { console.error('Upload failed', e); }
+            }
+          }
+          setModalOpen(false); 
+          setUploadFiles([]);
+        },
         onError: (err) => {
           applyServerErrors(err);
           if (!err?.response?.data?.errors?.length) {
@@ -199,6 +217,14 @@ function ProductsPage() {
           <Form.Item name="shelf_life" label="Shelf Life"><Input placeholder="e.g. 24 months" /></Form.Item>
           <Form.Item name="industry_application" label="Industry Application"><Input.TextArea rows={3} /></Form.Item>
           <Form.Item name="description" label="Description"><Input.TextArea rows={4} /></Form.Item>
+          {!editingId && (
+            <>
+              <Divider style={{ margin: '12px 0' }} />
+              <Form.Item label="Initial Documents">
+                <Input type="file" multiple onChange={(e) => setUploadFiles(Array.from(e.target.files))} />
+              </Form.Item>
+            </>
+          )}
         </>
       ),
     },
@@ -227,10 +253,10 @@ function ProductsPage() {
 
       <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }} wrap>
         <Input.Search
-          placeholder="Search by name, SKU, or CAS..."
+          placeholder="Search by name, SKU, CAS, or mapped company..."
           allowClear
           onSearch={(v) => { setSearch(v); setPage(1); }}
-          style={{ width: 300 }}
+          style={{ width: 350 }}
           prefix={<SearchOutlined />}
         />
         <Space>

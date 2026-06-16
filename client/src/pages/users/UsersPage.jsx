@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, Form, Input, Select, Space, Tag, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, SafetyOutlined } from '@ant-design/icons';
+import { Button, Form, Input, Select, Space, Tag, Tooltip, Modal } from 'antd';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, SafetyOutlined, KeyOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
 import DataTable from '../../components/DataTable';
 import FormModal from '../../components/FormModal';
@@ -10,9 +10,10 @@ import PermissionGuard from '../../components/PermissionGuard';
 import UserPermissionsModal from '../../components/UserPermissionsModal';
 import {
   useUsers, useUserFormData, useCreateUser,
-  useUpdateUser, useDeactivateUser, useReactivateUser
+  useUpdateUser, useDeactivateUser, useReactivateUser, useResetUserPassword
 } from '../../api/usersApi';
 import useFormErrors from '../../hooks/useFormErrors';
+import useAuthStore from '../../store/authStore';
 
 function UsersPage() {
   const [page, setPage] = useState(1);
@@ -23,7 +24,11 @@ function UsersPage() {
   const [deactivateTarget, setDeactivateTarget] = useState(null);
   const [permUserId, setPermUserId] = useState(null);
   const [permUserName, setPermUserName] = useState('');
+  const [resetPwdUserId, setResetPwdUserId] = useState(null);
   const [form] = Form.useForm();
+  const [resetPwdForm] = Form.useForm();
+  
+  const { user } = useAuthStore();
 
   const { data, isLoading } = useUsers({ page, limit: 20, search, status: statusFilter });
   const { data: formData } = useUserFormData();
@@ -31,6 +36,7 @@ function UsersPage() {
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
   const { mutate: deactivateUser, isPending: isDeactivating } = useDeactivateUser();
   const { mutate: reactivateUser } = useReactivateUser();
+  const { mutate: resetPassword, isPending: isResetting } = useResetUserPassword();
 
   const { applyServerErrors } = useFormErrors(form);
 
@@ -104,6 +110,15 @@ function UsersPage() {
               }} />
             </Tooltip>
           </PermissionGuard>
+          {user?.role === 'SUPER_ADMIN' && (
+            <Tooltip title="Reset Password">
+              <Button
+                icon={<KeyOutlined />}
+                size="small"
+                onClick={() => setResetPwdUserId(record.user_id)}
+              />
+            </Tooltip>
+          )}
         </Space>
       )
     }
@@ -210,6 +225,25 @@ function UsersPage() {
         userId={permUserId}
         userName={permUserName}
       />
+
+      <Modal
+        title="Reset User Password"
+        open={!!resetPwdUserId}
+        onCancel={() => { setResetPwdUserId(null); resetPwdForm.resetFields(); }}
+        onOk={() => resetPwdForm.submit()}
+        okText="Reset Password"
+        confirmLoading={isResetting}
+      >
+        <Form form={resetPwdForm} layout="vertical" onFinish={(values) => {
+          resetPassword({ userId: resetPwdUserId, newPassword: values.new_password }, {
+            onSuccess: () => { setResetPwdUserId(null); resetPwdForm.resetFields(); }
+          });
+        }}>
+          <Form.Item name="new_password" label="New Password" rules={[{ required: true, min: 8 }]}>
+            <Input.Password placeholder="Min 8 chars, upper, lower, number, special" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

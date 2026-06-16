@@ -74,3 +74,12 @@ export const useReactivateUser = () => {
     },
   });
 };
+
+export const useResetUserPassword = () => {
+  return useMutation({
+    mutationFn: ({ userId, newPassword }) =>
+      api.patch(`/users/${userId}/reset-password`, { new_password: newPassword }),
+    onSuccess: () => { message.success('Password reset. User session terminated.'); },
+    onError: (err) => { message.error(err?.response?.data?.message || 'Failed to reset password'); }
+  });
+};

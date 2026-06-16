@@ -5,6 +5,7 @@ import {
 } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
 import { useDashboardStats, useDashboardActivity } from '../../api/dashboardApi';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const { Title, Text } = Typography;
 
@@ -58,6 +59,11 @@ function DashboardPage() {
       title: 'Time', key: 'time', width: 180,
       render: (_, r) => new Date(r.created_at).toLocaleString()
     },
+  ];
+
+  const topCompaniesColumns = [
+    { title: 'Company Name', dataIndex: 'name', key: 'name' },
+    { title: 'Branches', dataIndex: 'branches', key: 'branches', render: (val) => <Tag color="blue">{val}</Tag> }
   ];
 
   return (
@@ -158,6 +164,40 @@ function DashboardPage() {
               }}
               size="small"
               locale={{ emptyText: 'No activities yet' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24} lg={12}>
+          <Card title="Product Additions (Last 6 Months)" bordered={false} style={{ borderRadius: 12 }}>
+            <div style={{ height: 300 }}>
+              {statsLoading ? <Spin /> : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={stats?.productTrends || []}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} />
+                    <YAxis axisLine={false} tickLine={false} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="value" stroke="#1890ff" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card title="Top Companies (By Branches)" bordered={false} style={{ borderRadius: 12 }}>
+            <Table
+              columns={topCompaniesColumns}
+              dataSource={stats?.topCompanies || []}
+              loading={statsLoading}
+              rowKey="name"
+              pagination={false}
+              size="small"
+              locale={{ emptyText: 'No companies yet' }}
             />
           </Card>
         </Col>

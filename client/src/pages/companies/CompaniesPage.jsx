@@ -10,11 +10,13 @@ import StatusBadge from '../../components/StatusBadge';
 import PermissionGuard from '../../components/PermissionGuard';
 import ExportCsvButton from '../../components/ExportCsvButton';
 import BulkImportModal from '../../components/BulkImportModal';
+import LocationFields from '../../components/LocationFields';
 import {
   useCompanies, useCompany,
   useCreateCompany, useUpdateCompany,
   useDeactivateCompany, useReactivateCompany
 } from '../../api/companiesApi';
+import { useUploadDocument } from '../../api/documentsApi';
 import useFormErrors from '../../hooks/useFormErrors';
 import useColumnVisibility from '../../hooks/useColumnVisibility';
 import { message } from 'antd';
@@ -44,7 +46,10 @@ function CompaniesPage() {
   const { mutate: update, isPending: updating } = useUpdateCompany();
   const { mutate: deactivate } = useDeactivateCompany();
   const { mutate: reactivate } = useReactivateCompany();
+  const { mutateAsync: uploadDoc } = useUploadDocument();
   const { applyServerErrors } = useFormErrors(form);
+
+  const [uploadFiles, setUploadFiles] = useState([]);
 
   useEffect(() => {
     if (editData && editingId) {
@@ -59,6 +64,7 @@ function CompaniesPage() {
     setEditingId(null);
     form.resetFields();
     form.setFieldsValue({ branches: [] });
+    setUploadFiles([]);
     setModalOpen(true);
   };
 
@@ -80,7 +86,20 @@ function CompaniesPage() {
       });
     } else {
       create(values, {
-        onSuccess: () => { setModalOpen(false); },
+        onSuccess: async (res) => { 
+          const companyId = res?.data?.data?.company_id;
+          if (companyId && uploadFiles.length > 0) {
+            for (let file of uploadFiles) {
+              const formData = new FormData();
+              formData.append('file', file.originFileObj || file);
+              formData.append('entity_type', 'COMPANY');
+              formData.append('entity_id', companyId);
+              try { await uploadDoc(formData); } catch (e) { console.error('Upload failed', e); }
+            }
+          }
+          setModalOpen(false); 
+          setUploadFiles([]);
+        },
         onError: (err) => {
           applyServerErrors(err);
           if (!err?.response?.data?.errors?.length) {
@@ -160,6 +179,14 @@ function CompaniesPage() {
           <Col span={12}><Form.Item name="website" label="Website"><Input /></Form.Item></Col>
           <Col span={12}><Form.Item name="industry_type" label="Industry Type"><Input /></Form.Item></Col>
           <Col span={24}><Form.Item name="remarks" label="Remarks"><Input.TextArea rows={2} /></Form.Item></Col>
+          {!editingId && (
+            <Col span={24}>
+              <Divider style={{ margin: '12px 0' }} />
+              <Form.Item label="Initial Documents">
+                <Input type="file" multiple onChange={(e) => setUploadFiles(Array.from(e.target.files))} />
+              </Form.Item>
+            </Col>
+          )}
         </Row>
       ),
     },
@@ -180,8 +207,7 @@ function CompaniesPage() {
                     <Col span={12}><Form.Item {...restField} name={[name, 'gst_number']} label="GST"><Input maxLength={15} /></Form.Item></Col>
                     <Col span={12}><Form.Item {...restField} name={[name, 'address_line1']} label="Address Line 1"><Input /></Form.Item></Col>
                     <Col span={12}><Form.Item {...restField} name={[name, 'address_line2']} label="Address Line 2"><Input /></Form.Item></Col>
-                    <Col span={8}><Form.Item {...restField} name={[name, 'city']} label="City"><Input /></Form.Item></Col>
-                    <Col span={8}><Form.Item {...restField} name={[name, 'state']} label="State"><Input /></Form.Item></Col>
+                    <LocationFields restField={restField} namePrefix={[name]} />
                     <Col span={8}><Form.Item {...restField} name={[name, 'pincode']} label="Pincode"><Input /></Form.Item></Col>
                     <Col span={8}><Form.Item {...restField} name={[name, 'contact_number']} label="Contact Number" rules={[{ pattern: /^[0-9]{10,15}$/, message: 'Must be 10-15 digits' }]}><Input /></Form.Item></Col>
                     <Col span={8}><Form.Item {...restField} name={[name, 'email']} label="Email" rules={[{ type: 'email', message: 'Invalid email format' }]}><Input /></Form.Item></Col>
@@ -222,9 +248,9 @@ function CompaniesPage() {
 
       <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }} wrap>
         <Input.Search
-          placeholder="Search by name, GST, or email..."
+          placeholder="Search by name, email, GST, or mapped product..."
           allowClear onSearch={(v) => { setSearch(v); setPage(1); }}
-          style={{ width: 300 }} prefix={<SearchOutlined />}
+          style={{ width: 350 }} prefix={<SearchOutlined />}
         />
         <Space>
           <Select placeholder="Company Type" allowClear style={{ width: 160 }}
