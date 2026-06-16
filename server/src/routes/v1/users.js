@@ -29,7 +29,8 @@ const { Router } = require('express');
 const {
   getUsersController, getUserByIdController, createUserController,
   updateUserController, deactivateUserController, reactivateUserController,
-  getRolesAndDepartmentsController, getUserPermissionsController, updateUserPermissionsController
+  getRolesAndDepartmentsController, getUserPermissionsController, updateUserPermissionsController,
+  resetUserPasswordController
 } = require('../../controllers/userController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
@@ -207,5 +208,8 @@ router.get('/:id/permissions', verifyToken, roleGuard('users', 'can_view'), getU
  *         description: Cannot modify Super Admin permissions
  */
 router.put('/:id/permissions', verifyToken, roleGuard('users', 'can_edit'), updateUserPermissionsController);
+
+// PATCH /users/:id/reset-password
+router.patch('/:id/reset-password', verifyToken, roleGuard('users', 'can_edit'), resetUserPasswordController);
 
 module.exports = router;

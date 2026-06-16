@@ -11,7 +11,6 @@ const loginRateLimiter = rateLimit({
     code: 'RATE_LIMITED',
     errors: [],
   },
-  keyGenerator: (req) => req.ip,
 });
 
 module.exports = { loginRateLimiter };

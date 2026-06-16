@@ -19,7 +19,7 @@ const getMappings = async ({ page = 1, limit = 20, company_id, product_id, role_
       where,
       skip,
       take: limit,
-      orderBy: { updated_at: 'desc' },
+      orderBy: { created_at: 'desc' },
       select: {
         mapping_id: true,
         company_id: true,
@@ -51,7 +51,6 @@ const getMappingById = async (id) => {
       lead_time_days: true,
       is_active: true,
       created_at: true,
-      updated_at: true,
       company: {
         select: {
           company_id: true,

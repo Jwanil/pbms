@@ -24,7 +24,7 @@ const getProfile = async (req, res, next) => {
     });
 
     if (!user) {
-      return sendError(res, 404, 'User not found', 'NOT_FOUND');
+      return sendError(res, 'User not found', 404, [], 'NOT_FOUND');
     }
 
     return sendSuccess(res, user, 'Profile fetched successfully');
@@ -72,7 +72,7 @@ const changePassword = async (req, res, next) => {
     const { current_password, new_password } = req.body;
 
     if (!current_password || !new_password) {
-      return sendError(res, 400, 'Current and new passwords are required', 'VALIDATION_ERROR');
+      return sendError(res, 'Current and new passwords are required', 400, [], 'VALIDATION_ERROR');
     }
 
     const user = await prisma.user.findUnique({
@@ -80,12 +80,12 @@ const changePassword = async (req, res, next) => {
     });
 
     if (!user) {
-      return sendError(res, 404, 'User not found', 'NOT_FOUND');
+      return sendError(res, 'User not found', 404, [], 'NOT_FOUND');
     }
 
     const isValid = await bcrypt.compare(current_password, user.password_hash);
     if (!isValid) {
-      return sendError(res, 400, 'Incorrect current password', 'VALIDATION_ERROR');
+      return sendError(res, 'Incorrect current password', 400, [], 'VALIDATION_ERROR');
     }
 
     const password_hash = await bcrypt.hash(new_password, 12);

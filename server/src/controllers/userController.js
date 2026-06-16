@@ -3,6 +3,7 @@ const { sendSuccess, sendPaginated, sendError } = require('../utils/response');
 const { writeAuditLog } = require('../utils/auditLog');
 const { PrismaClient } = require('@prisma/client');
 const { z } = require('zod');
+const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
@@ -199,8 +200,60 @@ const updateUserPermissionsController = async (req, res, next) => {
   }
 };
 
+const resetUserPasswordController = async (req, res, next) => {
+  try {
+    const targetUserId = parseInt(req.params.id);
+    const callerUserId = req.user.user_id;
+
+    // Fetch caller's role to enforce SUPER_ADMIN only
+    const caller = await prisma.user.findUnique({
+      where: { user_id: callerUserId },
+      select: { role: { select: { role_name: true } } }
+    });
+    if (caller?.role?.role_name !== 'SUPER_ADMIN') {
+      return sendError(res, 'Only Super Admin can reset passwords', 403, [], 'FORBIDDEN');
+    }
+
+    // Validate new password with Zod
+    const schema = z.object({
+      new_password: z.string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, 'Password must contain uppercase, lowercase, number and special character'),
+    });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return sendError(res, 'Validation failed', 400, parsed.error.issues.map(e => ({ field: e.path.join('.'), message: e.message })), 'VALIDATION_ERROR');
+    }
+
+    // Fetch target user — block resetting another SUPER_ADMIN
+    const targetUser = await prisma.user.findUnique({
+      where: { user_id: targetUserId },
+      select: { user_id: true, role: { select: { role_name: true } } }
+    });
+    if (!targetUser) return sendError(res, 'User not found', 404, [], 'NOT_FOUND');
+    if (targetUser.role.role_name === 'SUPER_ADMIN' && targetUserId !== callerUserId) {
+      return sendError(res, 'Cannot reset another Super Admin\'s password', 403, [], 'FORBIDDEN');
+    }
+
+    const password_hash = await bcrypt.hash(parsed.data.new_password, 12);
+
+    await prisma.user.update({
+      where: { user_id: targetUserId },
+      data: {
+        password_hash,
+        refresh_token_hash: null, // force logout of all sessions
+      }
+    });
+
+    await writeAuditLog(prisma, callerUserId, 'users', 'UPDATE', targetUserId, null, { password_reset: true }, req);
+
+    return sendSuccess(res, null, 'Password reset successfully. User must log in again.');
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getUsersController, getUserByIdController, createUserController,
   updateUserController, deactivateUserController, reactivateUserController,
-  getRolesAndDepartmentsController, getUserPermissionsController, updateUserPermissionsController
+  getRolesAndDepartmentsController, getUserPermissionsController, updateUserPermissionsController,
+  resetUserPasswordController
 };

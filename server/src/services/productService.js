@@ -12,6 +12,7 @@ const getProducts = async ({ page = 1, limit = 20, search = '', category_id, gra
           { product_name: { contains: search } },
           { sku: { contains: search } },
           { cas_number: { contains: search } },
+          { mappings: { some: { company: { company_name: { contains: search } } } } }
         ]
       } : {},
       category_id ? { category_id: parseInt(category_id) } : {},

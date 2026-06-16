@@ -20,7 +20,7 @@
  * /{id}/deactivate:
  *   patch:
  *     summary: PATCH /{id}/deactivate
- *   tags: [Companies]
+ *     tags: [Companies]
  *     parameters:
  *       - in: path
  *         name: id

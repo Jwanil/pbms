@@ -130,6 +130,7 @@ const createCompanyController = async (req, res, next) => {
         email: b.email === '' ? null : b.email,
       }));
     }
+    cleanData.created_by = req.user.user_id;
 
     const company = await companyService.createCompany(cleanData);
     await writeAuditLog(prisma, req.user.user_id, 'companies', 'CREATE', company.company_id, null, { company_name: company.company_name }, req);

@@ -3,12 +3,19 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const getStats = async () => {
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  sixMonthsAgo.setDate(1);
+  sixMonthsAgo.setHours(0, 0, 0, 0);
+
   const [
     totalProducts,
     totalCompanies,
     totalContacts,
     activeMappings,
-    companiesByType
+    companiesByType,
+    recentProducts,
+    topCompaniesRaw
   ] = await prisma.$transaction([
     prisma.product.count({ where: { status: 'ACTIVE' } }),
     prisma.company.count({ where: { status: 'ACTIVE' } }),
@@ -19,7 +26,34 @@ const getStats = async () => {
       where: { status: 'ACTIVE' },
       _count: { company_id: true },
     }),
+    prisma.product.findMany({
+      where: { created_at: { gte: sixMonthsAgo } },
+      select: { created_at: true }
+    }),
+    prisma.company.findMany({
+      where: { status: 'ACTIVE' },
+      select: { company_name: true, _count: { select: { branches: true } } },
+      orderBy: { branches: { _count: 'desc' } },
+      take: 5
+    })
   ]);
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const trendsMap = {};
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    trendsMap[`${monthNames[d.getMonth()]}`] = 0;
+  }
+
+  recentProducts.forEach(p => {
+    const d = new Date(p.created_at);
+    const key = monthNames[d.getMonth()];
+    if (trendsMap[key] !== undefined) trendsMap[key]++;
+  });
+
+  const productTrends = Object.entries(trendsMap).map(([month, value]) => ({ month, value }));
+  const topCompanies = topCompaniesRaw.map(c => ({ name: c.company_name, branches: c._count.branches }));
 
   return {
     totalProducts,
@@ -30,6 +64,8 @@ const getStats = async () => {
       type: g.company_type,
       count: g._count.company_id,
     })),
+    productTrends,
+    topCompanies
   };
 };
 

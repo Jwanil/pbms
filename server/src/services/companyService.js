@@ -12,6 +12,7 @@ const getCompanies = async ({ page = 1, limit = 20, search = '', company_type, s
           { company_name: { contains: search } },
           { gst_number: { contains: search } },
           { email: { contains: search } },
+          { mappings: { some: { product: { product_name: { contains: search } } } } }
         ]
       } : {},
       company_type ? { company_type } : {},
@@ -34,6 +35,7 @@ const getCompanies = async ({ page = 1, limit = 20, search = '', company_type, s
         gst_number: true,
         industry_type: true,
         status: true,
+        created_by: true,
         created_at: true,
         _count: { select: { branches: true } },
       }
@@ -61,6 +63,7 @@ const getCompanyById = async (id) => {
       website: true,
       industry_type: true,
       status: true,
+      created_by: true,
       created_at: true,
       updated_at: true,
       branches: {
@@ -120,6 +123,7 @@ const createCompany = async (data) => {
         cin_number: companyData.cin_number || null,
         website: companyData.website || null,
         industry_type: companyData.industry_type || null,
+        created_by: companyData.created_by || null,
       }
     });
 
