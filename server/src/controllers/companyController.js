@@ -48,6 +48,9 @@ const companySchema = z.object({
     required_error: 'Company type is required'
   }),
   address: z.string().max(500).optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  state: z.string().max(100).optional().nullable(),
+  country: z.string().max(100).optional().nullable(),
   email: z.string()
     .email('Please enter a valid email address')
     .max(255)

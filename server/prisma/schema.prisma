@@ -189,6 +189,9 @@ model Company {
   company_name  String
   company_type  CompanyType
   address       String?
+  city          String?
+  state         String?
+  country       String?     @default("India")
   email         String?
   phone         String?
   remarks       String?     @db.Text
@@ -208,6 +211,8 @@ model Company {
   mappings CompanyProductMapping[]
 
   @@index([company_type])
+  @@index([city])
+  @@index([state])
   @@index([gst_number])
   @@index([status])
   @@fulltext([company_name])

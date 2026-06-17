@@ -171,6 +171,7 @@ function CompaniesPage() {
           <Col span={24}>
             <Form.Item name="address" label="Address"><Input.TextArea rows={2} /></Form.Item>
           </Col>
+          <LocationFields namePrefix={[]} colSpan={8} />
           <Col span={12}><Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Invalid email format' }]}><Input /></Form.Item></Col>
           <Col span={12}><Form.Item name="phone" label="Phone" rules={[{ pattern: /^[0-9]{10,15}$/, message: 'Must be 10-15 digits' }]}><Input /></Form.Item></Col>
           <Col span={8}><Form.Item name="gst_number" label="GST Number"><Input maxLength={15} /></Form.Item></Col>

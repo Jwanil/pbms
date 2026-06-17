@@ -97,6 +97,15 @@ const CompanyViewDrawer = ({ companyId, open, onClose }) => {
           ]} />
 
           <Divider style={{ margin: '16px 0' }} />
+          <SectionTitle icon={<InfoCircleOutlined />} title="Location" />
+          <InfoGrid items={[
+            { label: 'Country', value: company.country },
+            { label: 'State', value: company.state },
+            { label: 'City', value: company.city },
+            { label: 'Address', value: company.address, span: 24 },
+          ]} />
+
+          <Divider style={{ margin: '16px 0' }} />
           <SectionTitle icon={<InfoCircleOutlined />} title="Registration Details" />
           <InfoGrid items={[
             { label: 'GST Number', value: company.gst_number },
@@ -105,9 +114,7 @@ const CompanyViewDrawer = ({ companyId, open, onClose }) => {
             { label: 'Status', value: <StatusBadge status={company.status} /> },
           ]} />
 
-          <Divider style={{ margin: '16px 0' }} />
           <InfoGrid items={[
-            { label: 'Address', value: company.address, span: 24 },
             { label: 'Remarks', value: company.remarks, span: 24 },
           ]} />
 
