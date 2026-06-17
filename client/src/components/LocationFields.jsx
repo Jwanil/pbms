@@ -30,6 +30,7 @@ export default function LocationFields({ restField = {}, namePrefix = [], colSpa
   // ─── Fetch states when a country is selected ──────────────────────────────
   const { data: states = [], isLoading: loadingStates } = useStates({
     countryId: selectedCountry?.country_id,
+    enabled: !!selectedCountry?.country_id,
   });
 
   // Resolve selected state object by name → get its ID for the cities query
@@ -41,6 +42,7 @@ export default function LocationFields({ restField = {}, namePrefix = [], colSpa
   // ─── Fetch cities when a state is selected ────────────────────────────────
   const { data: cities = [], isLoading: loadingCities } = useCities({
     stateId: selectedState?.state_id,
+    enabled: !!selectedState?.state_id,
   });
 
   // ─── Cascade resets ───────────────────────────────────────────────────────

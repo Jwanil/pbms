@@ -51,7 +51,7 @@ export const useReactivateCountry = () => {
 
 // ─── STATES ──────────────────────────────────────────────────────────────────
 
-export const useStates = ({ countryId, includeInactive = false } = {}) =>
+export const useStates = ({ countryId, includeInactive = false, enabled = true } = {}) =>
   useQuery({
     queryKey: ['locations', 'states', countryId, includeInactive],
     queryFn: async () => {
@@ -61,7 +61,7 @@ export const useStates = ({ countryId, includeInactive = false } = {}) =>
       const res = await api.get('/locations/states', { params });
       return res.data.data;
     },
-    enabled: true,
+    enabled,
   });
 
 export const useCreateState = () => {
@@ -102,7 +102,7 @@ export const useReactivateState = () => {
 
 // ─── CITIES ──────────────────────────────────────────────────────────────────
 
-export const useCities = ({ stateId, includeInactive = false } = {}) =>
+export const useCities = ({ stateId, includeInactive = false, enabled = true } = {}) =>
   useQuery({
     queryKey: ['locations', 'cities', stateId, includeInactive],
     queryFn: async () => {
@@ -112,7 +112,7 @@ export const useCities = ({ stateId, includeInactive = false } = {}) =>
       const res = await api.get('/locations/cities', { params });
       return res.data.data;
     },
-    enabled: !!stateId,
+    enabled,
   });
 
 export const useCreateCity = () => {
