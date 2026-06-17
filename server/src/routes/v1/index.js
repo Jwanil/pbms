@@ -14,6 +14,7 @@ const mappingsRouter = require('./mappings');
 const contactsRouter = require('./contacts');
 const dashboardRouter = require('./dashboard');
 const documentsRouter = require('./documents');
+const locationsRouter = require('./locations');
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use('/mappings', mappingsRouter);
 router.use('/contacts', contactsRouter);
 router.use('/dashboard', dashboardRouter);
 router.use('/documents', documentsRouter);
+router.use('/locations', locationsRouter);
 
 module.exports = router;

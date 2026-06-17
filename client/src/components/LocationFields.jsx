@@ -1,47 +1,49 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Col, Form, Select } from 'antd';
-import { Country, State, City } from 'country-state-city';
+import { useCountries, useStates, useCities } from '../api/locationsApi';
 
 /**
- * Reusable cascading location fields: Country → State → City
- * 
+ * Cascading location dropdowns: Country → State → City
+ * Fetches from the database via the locations API.
+ *
  * Props:
- *   restField   — spread from Form.List (only needed for branch lists, optional otherwise)
- *   namePrefix  — array path prefix for the form field names
- *                  e.g. [] for company-level, [branchIndex] for branch inside Form.List
- *   colSpan     — Ant Design Col span (default 8, i.e. 3 per row)
+ *   restField  — spread from Form.List (only needed inside branch Form.List, optional otherwise)
+ *   namePrefix — array path prefix: [] for company-level, [branchIndex] for branch inside Form.List
+ *   colSpan    — Ant Design Col span (default 8)
  */
 export default function LocationFields({ restField = {}, namePrefix = [], colSpan = 8 }) {
   const form = Form.useFormInstance();
 
-  // Build watched field paths
-  const countryPath = [...namePrefix, 'country'];
-  const statePath   = [...namePrefix, 'state'];
+  // Watch current form values to drive cascading
+  const countryName = Form.useWatch([...namePrefix, 'country'], form);
+  const stateName   = Form.useWatch([...namePrefix, 'state'],   form);
 
-  const countryName = Form.useWatch(countryPath, form);
-  const stateName   = Form.useWatch(statePath,   form);
+  // ─── Fetch all countries (always available) ───────────────────────────────
+  const { data: countries = [], isLoading: loadingCountries } = useCountries();
 
-  const countries = useMemo(() => Country.getAllCountries(), []);
+  // Resolve selected country object by name → get its ID for the states query
+  const selectedCountry = useMemo(
+    () => countries.find(c => c.country_name === (countryName || 'India')) ?? null,
+    [countryName, countries]
+  );
 
-  const selectedCountry = useMemo(() => {
-    const name = countryName || 'India';
-    return countries.find(c => c.name === name) ?? null;
-  }, [countryName, countries]);
+  // ─── Fetch states when a country is selected ──────────────────────────────
+  const { data: states = [], isLoading: loadingStates } = useStates({
+    countryId: selectedCountry?.country_id,
+  });
 
-  const states = useMemo(() =>
-    selectedCountry ? State.getStatesOfCountry(selectedCountry.isoCode) : [],
-  [selectedCountry]);
+  // Resolve selected state object by name → get its ID for the cities query
+  const selectedState = useMemo(
+    () => states.find(s => s.state_name === stateName) ?? null,
+    [stateName, states]
+  );
 
-  const selectedState = useMemo(() =>
-    stateName ? states.find(s => s.name === stateName) ?? null : null,
-  [stateName, states]);
+  // ─── Fetch cities when a state is selected ────────────────────────────────
+  const { data: cities = [], isLoading: loadingCities } = useCities({
+    stateId: selectedState?.state_id,
+  });
 
-  const cities = useMemo(() =>
-    selectedState && selectedCountry
-      ? City.getCitiesOfState(selectedCountry.isoCode, selectedState.isoCode)
-      : [],
-  [selectedState, selectedCountry]);
-
+  // ─── Cascade resets ───────────────────────────────────────────────────────
   const onCountryChange = () => {
     form.setFieldValue([...namePrefix, 'state'], undefined);
     form.setFieldValue([...namePrefix, 'city'],  undefined);
@@ -62,15 +64,17 @@ export default function LocationFields({ restField = {}, namePrefix = [], colSpa
         >
           <Select
             showSearch
+            loading={loadingCountries}
             placeholder="Select Country"
             onChange={onCountryChange}
             filterOption={(input, option) =>
-              option.label.toLowerCase().includes(input.toLowerCase())
+              option?.label?.toLowerCase().includes(input.toLowerCase())
             }
-            options={countries.map(c => ({ label: c.name, value: c.name }))}
+            options={countries.map(c => ({ label: c.country_name, value: c.country_name }))}
           />
         </Form.Item>
       </Col>
+
       <Col span={colSpan}>
         <Form.Item
           {...restField}
@@ -79,16 +83,18 @@ export default function LocationFields({ restField = {}, namePrefix = [], colSpa
         >
           <Select
             showSearch
+            loading={loadingStates}
             placeholder={selectedCountry ? 'Select State' : 'Select a Country first'}
-            onChange={onStateChange}
             disabled={!selectedCountry}
+            onChange={onStateChange}
             filterOption={(input, option) =>
-              option.label.toLowerCase().includes(input.toLowerCase())
+              option?.label?.toLowerCase().includes(input.toLowerCase())
             }
-            options={states.map(s => ({ label: s.name, value: s.name }))}
+            options={states.map(s => ({ label: s.state_name, value: s.state_name }))}
           />
         </Form.Item>
       </Col>
+
       <Col span={colSpan}>
         <Form.Item
           {...restField}
@@ -97,12 +103,13 @@ export default function LocationFields({ restField = {}, namePrefix = [], colSpa
         >
           <Select
             showSearch
+            loading={loadingCities}
             placeholder={selectedState ? 'Select City' : 'Select a State first'}
             disabled={!selectedState}
             filterOption={(input, option) =>
-              option.label.toLowerCase().includes(input.toLowerCase())
+              option?.label?.toLowerCase().includes(input.toLowerCase())
             }
-            options={cities.map(c => ({ label: c.name, value: c.name }))}
+            options={cities.map(c => ({ label: c.city_name, value: c.city_name }))}
           />
         </Form.Item>
       </Col>

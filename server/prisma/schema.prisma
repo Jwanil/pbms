@@ -88,6 +88,37 @@ model Department {
   users           User[]
 }
 
+model Country {
+  country_id   Int     @id @default(autoincrement())
+  country_name String  @unique
+  country_code String? @db.VarChar(3)
+  is_active    Boolean @default(true)
+  states       State[]
+}
+
+model State {
+  state_id    Int     @id @default(autoincrement())
+  state_name  String
+  country_id  Int
+  is_active   Boolean @default(true)
+  country     Country @relation(fields: [country_id], references: [country_id])
+  cities      City[]
+
+  @@unique([state_name, country_id])
+  @@index([country_id])
+}
+
+model City {
+  city_id   Int     @id @default(autoincrement())
+  city_name String
+  state_id  Int
+  is_active Boolean @default(true)
+  state     State   @relation(fields: [state_id], references: [state_id])
+
+  @@unique([city_name, state_id])
+  @@index([state_id])
+}
+
 // --- ROLES & PERMISSIONS ---
 
 model Role {

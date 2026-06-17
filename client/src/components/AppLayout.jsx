@@ -28,6 +28,7 @@ const menuItems = [
       { key: '/masters/grades', label: 'Grades' },
       { key: '/masters/packaging', label: 'Packaging' },
       { key: '/masters/departments', label: 'Departments' },
+      { key: '/masters/locations', label: 'Locations' },
     ],
   },
   { key: '/users', icon: <UserOutlined />, label: 'Users' },
@@ -44,6 +45,7 @@ const ROUTE_MODULE_MAP = {
   '/masters/grades': 'grades',
   '/masters/packaging': 'packaging',
   '/masters/departments': 'departments',
+  '/masters/locations': 'locations_countries',
   '/users': 'users',
 };
 
