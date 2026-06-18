@@ -94,7 +94,7 @@ function CompaniesPage() {
               formData.append('file', file.originFileObj || file);
               formData.append('entity_type', 'COMPANY');
               formData.append('entity_id', companyId);
-              try { await uploadDoc(formData); } catch (e) { console.error('Upload failed', e); }
+              try { await uploadDoc(formData); } catch (e) { /* ignore */ }
             }
           }
           setModalOpen(false); 

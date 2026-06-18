@@ -136,7 +136,7 @@ const ProductViewDrawer = ({ productId, open, onClose }) => {
       children: (
         <div style={{ padding: '8px 0' }}>
           <SectionTitle icon={<ShopOutlined />} title="Company Mappings" />
-          <Card bordered={false} bodyStyle={{ padding: 0 }} style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #f0f0f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <Card variant="borderless" styles={{ body: { padding: 0 } }} style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #f0f0f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <Table
               dataSource={product.mappings || []}
               rowKey="mapping_id"

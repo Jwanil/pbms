@@ -70,7 +70,7 @@ function ProfilePage() {
         <Col xs={24} lg={12}>
           <Card
             title={<Space><UserOutlined /> Personal Information</Space>}
-            bordered={false}
+            variant="borderless"
             extra={<Button type="primary" icon={<EditOutlined />} onClick={() => setIsModalVisible(true)}>Edit</Button>}
           >
             <Row gutter={[16, 16]}>
@@ -114,7 +114,7 @@ function ProfilePage() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title={<Space><LockOutlined /> Change Password</Space>} bordered={false}>
+          <Card title={<Space><LockOutlined /> Change Password</Space>} variant="borderless">
             <Form form={passwordForm} layout="vertical" onFinish={handleChangePassword}>
               <Form.Item name="current_password" label="Current Password" rules={[{ required: true, message: 'Current password is required' }]}>
                 <Input.Password />

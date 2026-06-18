@@ -79,7 +79,7 @@ function DashboardPage() {
         {STAT_CARDS.map((card) => (
           <Col xs={24} sm={12} lg={6} key={card.key}>
             <Card
-              bordered={false}
+              variant="borderless"
               style={{
                 borderRadius: 12,
                 background: card.bg,
@@ -102,7 +102,7 @@ function DashboardPage() {
         <Col xs={24} lg={8}>
           <Card
             title={<span style={{ fontWeight: 600 }}>Companies by Type</span>}
-            bordered={false}
+            variant="borderless"
             style={{ borderRadius: 12, height: '100%' }}
           >
             {statsLoading ? (
@@ -146,7 +146,7 @@ function DashboardPage() {
                 Recent Activities
               </span>
             }
-            bordered={false}
+            variant="borderless"
             style={{ borderRadius: 12 }}
           >
             <Table
@@ -171,7 +171,7 @@ function DashboardPage() {
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={12}>
-          <Card title="Product Additions (Last 6 Months)" bordered={false} style={{ borderRadius: 12 }}>
+          <Card title="Product Additions (Last 6 Months)" variant="borderless" style={{ borderRadius: 12 }}>
             <div style={{ height: 300 }}>
               {statsLoading ? <Spin /> : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -189,7 +189,7 @@ function DashboardPage() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="Top Companies (By Branches)" bordered={false} style={{ borderRadius: 12 }}>
+          <Card title="Top Companies (By Branches)" variant="borderless" style={{ borderRadius: 12 }}>
             <Table
               columns={topCompaniesColumns}
               dataSource={stats?.topCompanies || []}

@@ -85,7 +85,7 @@ function ProductsPage() {
               formData.append('file', file.originFileObj || file);
               formData.append('entity_type', 'PRODUCT');
               formData.append('entity_id', productId);
-              try { await uploadDoc(formData); } catch (e) { console.error('Upload failed', e); }
+              try { await uploadDoc(formData); } catch (e) { /* ignore */ }
             }
           }
           setModalOpen(false); 

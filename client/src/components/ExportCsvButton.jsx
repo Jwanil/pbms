@@ -21,7 +21,7 @@ const ExportCsvButton = ({ module, moduleName }) => {
       window.URL.revokeObjectURL(url);
       message.success(`${moduleName} exported successfully`);
     } catch (error) {
-      console.error('Export failed:', error);
+      // ignore error
       message.error(`Failed to export ${moduleName}`);
     } finally {
       hide();

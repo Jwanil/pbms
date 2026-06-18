@@ -24,7 +24,17 @@ const login = async (email, password) => {
   // 1. Find user by email
   const user = await prisma.user.findUnique({
     where: { email },
-    include: { role: true }
+    select: {
+      user_id: true,
+      email: true,
+      username: true,
+      name: true,
+      status: true,
+      password_hash: true,
+      role_id: true,
+      refresh_token_hash: true,
+      role: { select: { role_name: true } }
+    }
   });
 
   if (!user) {
