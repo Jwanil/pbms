@@ -171,7 +171,7 @@ const CompanyViewDrawer = ({ companyId, open, onClose }) => {
           <DocumentsPanel 
             entityType="COMPANY" 
             entityId={company.company_id} 
-            canUpload={company.created_by === currentUser?.user_id || currentUser?.role?.role_name === 'SUPER_ADMIN'}
+            canUpload={company.created_by === currentUser?.user_id || currentUser?.role === 'SUPER_ADMIN'}
           />
         </div>
       ),

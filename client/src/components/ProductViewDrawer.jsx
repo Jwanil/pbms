@@ -160,7 +160,7 @@ const ProductViewDrawer = ({ productId, open, onClose }) => {
           <DocumentsPanel 
             entityType="PRODUCT" 
             entityId={product.product_id} 
-            canUpload={product.created_by === currentUser?.user_id || currentUser?.role?.role_name === 'SUPER_ADMIN'}
+            canUpload={product.created_by === currentUser?.user_id || currentUser?.role === 'SUPER_ADMIN'}
           />
         </div>
       )
