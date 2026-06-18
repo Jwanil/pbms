@@ -29,7 +29,7 @@
 
 The **Product & Buyer Management System (PBMS)** is a full-stack internal admin panel built for chemical industry operations. It provides a centralized, structured, and permission-controlled platform for managing:
 
-- **Chemical Products** — with technical properties (CAS number, molecular formula, purity, etc.)
+- **Chemical Products** — with technical properties (CAS number, UN number, etc.)
 - **Companies** — manufacturers, suppliers, buyers, and distributors with multi-branch support
 - **Contacts** — individuals linked to companies, with tracked product interests
 - **Product-Company Mappings** — the core relational data linking products to their market participants
@@ -364,11 +364,7 @@ Unique constraint on `(user_id, module_name)`. Super Admin is seeded with all pe
 | grade_id | Int? FK | References `Grade` |
 | packaging_id | Int? FK | References `Packaging` |
 | unit_of_measure | Enum? | `KG`, `LITRE`, `TON` |
-| molecular_formula | String? | e.g. H2O |
-| molecular_weight | Decimal? | Decimal(10,4) |
-| purity | Decimal? | Decimal(5,2) |
 | shelf_life | String? | e.g. "24 months" |
-| process_type | String? | Manufacturing process |
 | un_number | String? | UN hazard classification |
 | industry_application | Text? | Long-form application description |
 | hsn_code | String? | Harmonized System Nomenclature |

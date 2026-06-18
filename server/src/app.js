@@ -4,12 +4,13 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
+
+dotenv.config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
+
 const { errorHandler } = require('./middleware/errorHandler');
 const v1Routes = require('./routes/v1/index');
 const swaggerUi = require('swagger-ui-express');
 const { swaggerSpec } = require('./utils/swagger');
-
-dotenv.config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
 
 const app = express();
 

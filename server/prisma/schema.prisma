@@ -183,10 +183,6 @@ model Product {
   packaging_id         Int?
   unit_of_measure      UnitOfMeasure?
   shelf_life           String?
-  molecular_formula    String?
-  molecular_weight     Decimal?       @db.Decimal(10, 4)
-  purity               Decimal?       @db.Decimal(5, 2)
-  process_type         String?
   un_number            String?
   industry_application String?        @db.Text
   hsn_code             String?

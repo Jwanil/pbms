@@ -22,22 +22,6 @@ const productSchema = z.object({
   packaging_id: z.number().int().positive('Please select a valid packaging type').optional().nullable(),
   unit_of_measure: z.enum(['KG', 'LITRE', 'TON']).optional().nullable(),
   shelf_life: z.string().max(100, 'Shelf life cannot exceed 100 characters').optional().nullable(),
-  molecular_formula: z.string()
-    .max(200, 'Molecular formula cannot exceed 200 characters')
-    .regex(/^[a-zA-Z0-9\(\)\[\]\{\}\+\-\.]+$/, 'Molecular formula contains invalid characters')
-    .optional()
-    .nullable(),
-  molecular_weight: z.number()
-    .positive('Molecular weight must be greater than 0')
-    .max(100000, 'Molecular weight value seems too large — please verify')
-    .optional()
-    .nullable(),
-  purity: z.number()
-    .min(0, 'Purity cannot be negative')
-    .max(100, 'Purity cannot exceed 100%')
-    .optional()
-    .nullable(),
-  process_type: z.string().max(200).optional().nullable(),
   un_number: z.string()
     .regex(/^(UN)?\d{4}$/, 'UN Number must be 4 digits, optionally prefixed with UN (e.g. UN1234 or 1234)')
     .optional()
@@ -144,10 +128,6 @@ const exportProductsController = async (req, res, next) => {
         composition: true,
         unit_of_measure: true,
         shelf_life: true,
-        molecular_formula: true,
-        molecular_weight: true,
-        purity: true,
-        process_type: true,
         un_number: true,
         industry_application: true,
         hsn_code: true,
@@ -169,10 +149,6 @@ const exportProductsController = async (req, res, next) => {
       packaging_name: p.packaging?.packaging_name || '',
       unit_of_measure: p.unit_of_measure,
       shelf_life: p.shelf_life,
-      molecular_formula: p.molecular_formula,
-      molecular_weight: p.molecular_weight,
-      purity: p.purity,
-      process_type: p.process_type,
       un_number: p.un_number,
       industry_application: p.industry_application,
       hsn_code: p.hsn_code,
@@ -192,13 +168,11 @@ const sampleCsvProductsController = async (req, res, next) => {
   try {
     const headers = [
       'product_name', 'sku', 'composition', 'category_name', 'grade_name', 'packaging_name',
-      'unit_of_measure', 'shelf_life', 'molecular_formula', 'molecular_weight', 'purity',
-      'process_type', 'un_number', 'industry_application', 'hsn_code', 'cas_number', 'description'
+      'unit_of_measure', 'shelf_life', 'un_number', 'industry_application', 'hsn_code', 'cas_number', 'description'
     ];
     const exampleRow = [
       'Acetone', 'ACT-001', 'Dimethyl ketone', 'Solvents', 'Industrial', 'HDPE Drum',
-      'KG', '24 months', 'C3H6O', '58.08', '99.5', 'Distillation',
-      'UN1090', 'Paint thinners and adhesives', '2914 11 00', '67-64-1', 'High purity industrial grade acetone'
+      'KG', '24 months', 'UN1090', 'Paint thinners and adhesives', '2914 11 00', '67-64-1', 'High purity industrial grade acetone'
     ];
     const csvString = Papa.unparse({ fields: headers, data: [exampleRow] });
     res.setHeader('Content-Type', 'text/csv');
@@ -265,10 +239,6 @@ const importProductsController = async (req, res, next) => {
           packaging_id,
           unit_of_measure: row.unit_of_measure || null,
           shelf_life: row.shelf_life || null,
-          molecular_formula: row.molecular_formula || null,
-          molecular_weight: row.molecular_weight ? parseFloat(row.molecular_weight) : null,
-          purity: row.purity ? parseFloat(row.purity) : null,
-          process_type: row.process_type || null,
           un_number: row.un_number || null,
           industry_application: row.industry_application || null,
           hsn_code: row.hsn_code || null,

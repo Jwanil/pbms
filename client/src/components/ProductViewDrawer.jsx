@@ -112,10 +112,6 @@ const ProductViewDrawer = ({ productId, open, onClose }) => {
           <InfoGrid items={[
             { label: 'CAS Number', value: product.cas_number },
             { label: 'Composition', value: product.composition, span: 16 },
-            { label: 'Molecular Formula', value: product.molecular_formula },
-            { label: 'Molecular Weight', value: product.molecular_weight },
-            { label: 'Purity', value: product.purity ? `${product.purity}%` : null },
-            { label: 'Process Type', value: product.process_type },
             { label: 'Packaging', value: product.packaging ? `${product.packaging.packaging_name} (${product.packaging.size_value} ${product.packaging.size_unit})` : null },
             { label: 'Unit of Measure', value: product.unit_of_measure },
           ]} />
