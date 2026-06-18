@@ -110,10 +110,10 @@ const ProductViewDrawer = ({ productId, open, onClose }) => {
 
           <SectionTitle icon={<AppstoreOutlined />} title="Technical Specifications" />
           <InfoGrid items={[
-            { label: 'CAS Number', value: product.cas_number },
-            { label: 'Composition', value: product.composition, span: 16 },
-            { label: 'Packaging', value: product.packaging ? `${product.packaging.packaging_name} (${product.packaging.size_value} ${product.packaging.size_unit})` : null },
-            { label: 'Unit of Measure', value: product.unit_of_measure },
+            { label: 'CAS Number', value: product.cas_number, span: 12 },
+            { label: 'Composition', value: product.composition, span: 12 },
+            { label: 'Packaging', value: product.packaging ? `${product.packaging.packaging_name} (${product.packaging.size_value} ${product.packaging.size_unit})` : null, span: 12 },
+            { label: 'Unit of Measure', value: product.unit_of_measure, span: 12 },
           ]} />
 
           <SectionTitle icon={<InfoCircleOutlined />} title="System Information" />
