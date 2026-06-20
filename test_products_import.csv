@@ -1,0 +1,5 @@
+product_name,sku,composition,category_name,grade_name,packaging_name,unit_of_measure,shelf_life,un_number,industry_application,hsn_code,cas_number,description
+Sodium Hydroxide,ALK-001,NaOH,Alkalis,Industrial,PP Bag,KG,12 months,UN1823,pH Regulation,28151190,1310-73-2,Caustic soda flakes for industrial use
+Methanol,SOL-002,CH3OH,Solvents,Technical,HDPE Drum,LITRE,24 months,UN1230,Solvent and antifreeze,29051100,67-56-1,Technical grade methanol
+Sulfuric Acid,ACD-003,H2SO4,Acids,Reagent,IBC Tank,LITRE,36 months,UN1830,Battery acid and fertilizer,28070010,7664-93-9,High concentration sulfuric acid
+Polyethylene Glycol,POL-004,PEG,Polymers,Pharma,HDPE Drum,KG,24 months,,Pharmaceutical excipient,34042000,25322-68-3,Pharma grade polymer

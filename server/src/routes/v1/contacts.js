@@ -109,7 +109,8 @@ const { Router } = require('express');
 const {
   getContactsController, getContactByIdController, createContactController,
   updateContactController, deactivateContactController, reactivateContactController,
-  getBranchesController, exportContactsController, sampleCsvContactsController, importContactsController
+  getBranchesController, exportContactsController, sampleCsvContactsController,
+  importContactsController, checkDuplicatesController, importJsonController
 } = require('../../controllers/contactController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
@@ -165,6 +166,8 @@ router.get('/', verifyToken, roleGuard('contacts', 'can_view'), getContactsContr
 router.get('/:id', verifyToken, roleGuard('contacts', 'can_view'), getContactByIdController);
 router.post('/', verifyToken, roleGuard('contacts', 'can_create'), createContactController);
 router.post('/import', verifyToken, roleGuard('contacts', 'can_create'), uploadCsv.single('file'), importContactsController);
+router.post('/check-duplicates', verifyToken, roleGuard('contacts', 'can_view'), checkDuplicatesController);
+router.post('/import-json', verifyToken, roleGuard('contacts', 'can_create'), importJsonController);
 router.put('/:id', verifyToken, roleGuard('contacts', 'can_edit'), updateContactController);
 router.patch('/:id/deactivate', verifyToken, roleGuard('contacts', 'can_delete'), deactivateContactController);
 router.patch('/:id/reactivate', verifyToken, roleGuard('contacts', 'can_edit'), reactivateContactController);

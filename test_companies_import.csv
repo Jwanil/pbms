@@ -1,0 +1,4 @@
+company_name,company_type,email,phone,gst_number,pan_number,cin_number,website,industry_type,address,remarks
+Global Pharma Corp,MANUFACTURER,contact@globalpharma.com,1234567890,22AAAAA0000A1Z1,AAAAA1111A,L24230GJ1995PLC123456,www.globalpharma.com,Pharmaceuticals,"45 Industrial Area, Ahmedabad",Major supplier of APIs
+Reliance Solvents Ltd,SUPPLIER,sales@reliancesolvents.com,9876543211,27BBBBB0000B1Z2,BBBBB2222B,U24110MH2001PLC654321,www.reliancesolvents.com,Petrochemicals,"Andheri East, Mumbai",High volume solvent distributor
+Sunrise Agrochemicals,BUYER,procurement@sunriseagro.in,8765432109,24CCCCC0000C1Z3,CCCCC3333C,,,Agriculture,"Phase 4, GIDC Vapi",Needs raw materials in bulk

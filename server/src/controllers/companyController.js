@@ -293,8 +293,59 @@ const importCompaniesController = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const checkDuplicatesController = async (req, res, next) => {
+  try {
+    const { keys } = req.body;
+    if (!Array.isArray(keys) || keys.length === 0) return sendSuccess(res, { duplicates: [] }, 'No keys to check');
+    const existing = await prisma.company.findMany({
+      where: { company_name: { in: keys } },
+      select: { company_name: true },
+    });
+    const duplicates = existing.map(c => c.company_name).filter(Boolean);
+    return sendSuccess(res, { duplicates }, 'Duplicate check complete');
+  } catch (err) { next(err); }
+};
+
+const importJsonController = async (req, res, next) => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) return sendError(res, 'No rows provided', 400, [], 'VALIDATION_ERROR');
+
+    let imported = 0;
+    const skipped = [];
+
+    for (const [index, row] of rows.entries()) {
+      try {
+        const payload = {
+          company_name: row.company_name,
+          company_type: row.company_type,
+          email: row.email || null,
+          phone: row.phone || null,
+          gst_number: row.gst_number || null,
+          pan_number: row.pan_number || null,
+          cin_number: row.cin_number || null,
+          website: row.website || null,
+          industry_type: row.industry_type || null,
+          address: row.address || null,
+          remarks: row.remarks || null,
+        };
+        const parsed = companySchema.safeParse(payload);
+        if (!parsed.success) throw new Error(parsed.error.issues.map(i => i.message).join(', '));
+        const created = await companyService.createCompany(parsed.data, req.user.user_id);
+        await writeAuditLog(prisma, req.user.user_id, 'companies', 'CREATE', created.company_id, null, { source: 'JSON_IMPORT' }, req);
+        imported++;
+      } catch (err) {
+        skipped.push({ row: index + 1, reason: err.message });
+      }
+    }
+
+    return sendSuccess(res, { imported, skipped: skipped.length, errors: skipped }, `Imported ${imported} records, skipped ${skipped.length}`);
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getCompaniesController, getCompanyByIdController, createCompanyController,
   updateCompanyController, deactivateCompanyController, reactivateCompanyController,
-  exportCompaniesController, sampleCsvCompaniesController, importCompaniesController
+  exportCompaniesController, sampleCsvCompaniesController, importCompaniesController,
+  checkDuplicatesController, importJsonController
 };

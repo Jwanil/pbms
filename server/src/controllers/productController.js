@@ -263,8 +263,86 @@ const importProductsController = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const checkDuplicatesController = async (req, res, next) => {
+  try {
+    const { keys } = req.body; // keys = array of SKU strings
+    if (!Array.isArray(keys) || keys.length === 0) return sendSuccess(res, { duplicates: [] }, 'No keys to check');
+    const existing = await prisma.product.findMany({
+      where: { sku: { in: keys } },
+      select: { sku: true },
+    });
+    const duplicates = existing.map(p => p.sku).filter(Boolean);
+    return sendSuccess(res, { duplicates }, 'Duplicate check complete');
+  } catch (err) { next(err); }
+};
+
+const importJsonController = async (req, res, next) => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) return sendError(res, 'No rows provided', 400, [], 'VALIDATION_ERROR');
+
+    const categories = await prisma.category.findMany();
+    const grades = await prisma.grade.findMany();
+    const packagings = await prisma.packaging.findMany();
+
+    let imported = 0;
+    const skipped = [];
+
+    for (const [index, row] of rows.entries()) {
+      try {
+        let category_id = null;
+        if (row.category_name) {
+          const cat = categories.find(c => c.category_name.toLowerCase() === row.category_name.toLowerCase());
+          if (cat) category_id = cat.category_id;
+          else throw new Error(`Category '${row.category_name}' not found`);
+        }
+        let grade_id = null;
+        if (row.grade_name) {
+          const grd = grades.find(g => g.grade_name.toLowerCase() === row.grade_name.toLowerCase());
+          if (grd) grade_id = grd.grade_id;
+          else throw new Error(`Grade '${row.grade_name}' not found`);
+        }
+        let packaging_id = null;
+        if (row.packaging_name) {
+          const pkg = packagings.find(p => p.packaging_name.toLowerCase() === row.packaging_name.toLowerCase());
+          if (pkg) packaging_id = pkg.packaging_id;
+          else throw new Error(`Packaging '${row.packaging_name}' not found`);
+        }
+
+        const payload = {
+          product_name: row.product_name,
+          sku: row.sku || null,
+          composition: row.composition || null,
+          category_id,
+          grade_id,
+          packaging_id,
+          unit_of_measure: row.unit_of_measure || null,
+          shelf_life: row.shelf_life || null,
+          un_number: row.un_number || null,
+          industry_application: row.industry_application || null,
+          hsn_code: row.hsn_code || null,
+          cas_number: row.cas_number || null,
+          description: row.description || null,
+        };
+
+        const parsed = productSchema.safeParse(payload);
+        if (!parsed.success) throw new Error(parsed.error.issues.map(i => i.message).join(', '));
+
+        const created = await productService.createProduct(parsed.data, req.user.user_id);
+        await writeAuditLog(prisma, req.user.user_id, 'products', 'CREATE', created.product_id, null, { source: 'JSON_IMPORT' }, req);
+        imported++;
+      } catch (err) {
+        skipped.push({ row: index + 1, reason: err.message });
+      }
+    }
+
+    return sendSuccess(res, { imported, skipped: skipped.length, errors: skipped }, `Imported ${imported} records, skipped ${skipped.length}`);
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getProductsController, getProductByIdController, createProductController,
   updateProductController, deactivateProductController, reactivateProductController,
-  getFormDataController, exportProductsController, sampleCsvProductsController, importProductsController
+  getFormDataController, exportProductsController, sampleCsvProductsController,
+  importProductsController, checkDuplicatesController, importJsonController
 };

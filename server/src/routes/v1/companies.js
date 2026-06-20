@@ -87,7 +87,8 @@ const { Router } = require('express');
 const {
   getCompaniesController, getCompanyByIdController, createCompanyController,
   updateCompanyController, deactivateCompanyController, reactivateCompanyController,
-  exportCompaniesController, sampleCsvCompaniesController, importCompaniesController
+  exportCompaniesController, sampleCsvCompaniesController, importCompaniesController,
+  checkDuplicatesController, importJsonController
 } = require('../../controllers/companyController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
@@ -134,6 +135,8 @@ router.get('/sample-csv', verifyToken, roleGuard('companies', 'can_view'), sampl
 router.get('/:id', verifyToken, roleGuard('companies', 'can_view'), getCompanyByIdController);
 router.post('/', verifyToken, roleGuard('companies', 'can_create'), createCompanyController);
 router.post('/import', verifyToken, roleGuard('companies', 'can_create'), uploadCsv.single('file'), importCompaniesController);
+router.post('/check-duplicates', verifyToken, roleGuard('companies', 'can_view'), checkDuplicatesController);
+router.post('/import-json', verifyToken, roleGuard('companies', 'can_create'), importJsonController);
 router.put('/:id', verifyToken, roleGuard('companies', 'can_edit'), updateCompanyController);
 router.patch('/:id/deactivate', verifyToken, roleGuard('companies', 'can_delete'), deactivateCompanyController);
 router.patch('/:id/reactivate', verifyToken, roleGuard('companies', 'can_edit'), reactivateCompanyController);

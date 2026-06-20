@@ -285,8 +285,84 @@ const importContactsController = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const checkDuplicatesController = async (req, res, next) => {
+  try {
+    const { keys } = req.body; // keys = array of mobile numbers
+    if (!Array.isArray(keys) || keys.length === 0) return sendSuccess(res, { duplicates: [] }, 'No keys to check');
+    const existing = await prisma.contact.findMany({
+      where: { mobile: { in: keys } },
+      select: { mobile: true },
+    });
+    const duplicates = existing.map(c => c.mobile).filter(Boolean);
+    return sendSuccess(res, { duplicates }, 'Duplicate check complete');
+  } catch (err) { next(err); }
+};
+
+const importJsonController = async (req, res, next) => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) return sendError(res, 'No rows provided', 400, [], 'VALIDATION_ERROR');
+
+    const companies = await prisma.company.findMany({ include: { branches: true } });
+    let imported = 0;
+    const skipped = [];
+
+    for (const [index, row] of rows.entries()) {
+      try {
+        let company_id = null;
+        let branch_id = null;
+        if (row.company_name) {
+          const comp = companies.find(c => c.company_name.toLowerCase() === row.company_name.toLowerCase());
+          if (comp) {
+            company_id = comp.company_id;
+            if (row.branch_name) {
+              const br = comp.branches.find(b => b.branch_name.toLowerCase() === row.branch_name.toLowerCase());
+              if (br) branch_id = br.branch_id;
+              else throw new Error(`Branch '${row.branch_name}' not found`);
+            }
+          } else {
+            throw new Error(`Company '${row.company_name}' not found`);
+          }
+        }
+
+        const payload = {
+          first_name: row.first_name,
+          last_name: row.last_name || null,
+          mobile: row.mobile,
+          alternate_mobile: row.alternate_mobile || null,
+          email: row.email || null,
+          contact_type: row.contact_type || null,
+          designation: row.designation || null,
+          preferred_language: row.preferred_language || null,
+          tags: row.tags ? row.tags.split('|').map(t => t.trim()) : [],
+          company_id,
+          branch_id,
+          product_ids: [],
+        };
+
+        const parsed = contactSchema.safeParse(payload);
+        if (!parsed.success) throw new Error(parsed.error.issues.map(i => i.message).join(', '));
+
+        const cleanData = { ...parsed.data };
+        if (cleanData.email === '') cleanData.email = null;
+        if (cleanData.alternate_mobile === '') cleanData.alternate_mobile = null;
+        if (typeof cleanData.tags === 'string') { try { cleanData.tags = JSON.parse(cleanData.tags); } catch (e) {} }
+
+        const created = await contactService.createContact(cleanData);
+        await writeAuditLog(prisma, req.user.user_id, 'contacts', 'CREATE', created.contact_id, null, { source: 'JSON_IMPORT' }, req);
+        imported++;
+      } catch (err) {
+        skipped.push({ row: index + 1, reason: err.message });
+      }
+    }
+
+    return sendSuccess(res, { imported, skipped: skipped.length, errors: skipped }, `Imported ${imported} records, skipped ${skipped.length}`);
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getContactsController, getContactByIdController, createContactController,
   updateContactController, deactivateContactController, reactivateContactController,
-  getBranchesController, exportContactsController, sampleCsvContactsController, importContactsController
+  getBranchesController, exportContactsController, sampleCsvContactsController,
+  importContactsController, checkDuplicatesController, importJsonController
 };

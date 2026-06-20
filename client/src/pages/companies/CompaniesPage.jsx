@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Table, Button, Space, Input, InputNumber, Select, Tag, Form, Tabs, Popconfirm, Spin, Card, Row, Col, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, DeleteOutlined, EyeOutlined, UploadOutlined } from '@ant-design/icons';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Table, Button, Space, Input, Select, Form, Tabs, InputNumber, Modal, Spin, Card, Row, Col, Divider } from 'antd';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, DeleteOutlined, EyeOutlined, UploadOutlined, WarningFilled } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
@@ -19,7 +19,7 @@ import {
 import { useUploadDocument } from '../../api/documentsApi';
 import useFormErrors from '../../hooks/useFormErrors';
 import useColumnVisibility from '../../hooks/useColumnVisibility';
-import { message } from 'antd';
+import { Tag, message } from 'antd';
 
 const COMPANY_TYPES = [
   { value: 'MANUFACTURER', label: 'Manufacturer', color: 'blue' },
@@ -39,6 +39,7 @@ function CompaniesPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [viewId, setViewId] = useState(null);
+  const [uploadFiles, setUploadFiles] = useState([]);
 
   const { data: listData, isLoading } = useCompanies({ page, search, company_type: filterType, status: filterStatus });
   const { data: editData } = useCompany(editingId);
@@ -49,31 +50,57 @@ function CompaniesPage() {
   const { mutateAsync: uploadDoc } = useUploadDocument();
   const { applyServerErrors } = useFormErrors(form);
 
-  const [uploadFiles, setUploadFiles] = useState([]);
-
   useEffect(() => {
     if (editData && editingId) {
-      form.setFieldsValue({
-        ...editData,
-        branches: editData.branches || [],
-      });
+      form.setFieldsValue({ ...editData, branches: editData.branches || [] });
     }
   }, [editData, editingId, form]);
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     setEditingId(null);
     form.resetFields();
     form.setFieldsValue({ branches: [] });
     setUploadFiles([]);
     setModalOpen(true);
-  };
+  }, [form]);
 
-  const handleEdit = (record) => {
+  const handleEdit = useCallback((record) => {
     setEditingId(record.company_id);
     setModalOpen(true);
-  };
+  }, []);
 
-  const handleSubmit = (values) => {
+  const handleDeactivate = useCallback((record) => {
+    const activeMappings = record._count?.mappings ?? 0;
+    if (activeMappings > 0) {
+      Modal.warning({
+        title: 'Cannot Deactivate — Active Mappings Exist',
+        content: (
+          <div>
+            <p>
+              <strong>{record.company_name}</strong> has{' '}
+              <strong>{activeMappings} active product mapping{activeMappings !== 1 ? 's' : ''}</strong>.
+            </p>
+            <p style={{ color: '#8c8c8c', marginTop: 8 }}>
+              You must deactivate or remove all mappings before deactivating this company.
+              Go to the <strong>Mapping</strong> page to manage them.
+            </p>
+          </div>
+        ),
+        okText: 'Understood',
+        icon: <WarningFilled style={{ color: '#faad14' }} />,
+      });
+      return;
+    }
+    Modal.confirm({
+      title: 'Deactivate this company?',
+      content: `"${record.company_name}" and all its mappings will be set to INACTIVE.`,
+      okText: 'Deactivate',
+      okType: 'danger',
+      onOk: () => deactivate(record.company_id),
+    });
+  }, [deactivate]);
+
+  const handleSubmit = useCallback((values) => {
     if (editingId) {
       update({ id: editingId, data: values }, {
         onSuccess: () => { setModalOpen(false); setEditingId(null); },
@@ -82,22 +109,22 @@ function CompaniesPage() {
           if (!err?.response?.data?.errors?.length) {
             message.error(err?.response?.data?.message || 'Failed to update company');
           }
-        }
+        },
       });
     } else {
       create(values, {
-        onSuccess: async (res) => { 
+        onSuccess: async (res) => {
           const companyId = res?.data?.data?.company_id;
           if (companyId && uploadFiles.length > 0) {
             for (let file of uploadFiles) {
-              const formData = new FormData();
-              formData.append('file', file.originFileObj || file);
-              formData.append('entity_type', 'COMPANY');
-              formData.append('entity_id', companyId);
-              try { await uploadDoc(formData); } catch (e) { /* ignore */ }
+              const fd = new FormData();
+              fd.append('file', file.originFileObj || file);
+              fd.append('entity_type', 'COMPANY');
+              fd.append('entity_id', companyId);
+              try { await uploadDoc(fd); } catch { /* ignore */ }
             }
           }
-          setModalOpen(false); 
+          setModalOpen(false);
           setUploadFiles([]);
         },
         onError: (err) => {
@@ -105,23 +132,27 @@ function CompaniesPage() {
           if (!err?.response?.data?.errors?.length) {
             message.error(err?.response?.data?.message || 'Failed to create company');
           }
-        }
+        },
       });
     }
-  };
+  }, [editingId, update, create, uploadFiles, uploadDoc, applyServerErrors]);
 
-  const handleImportSuccess = () => {
+  const handleImportSuccess = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['companies'] });
-  };
+  }, [queryClient]);
 
-  const allColumns = [
+  const handleSearch = useCallback((v) => { setSearch(v); setPage(1); }, []);
+  const handleTypeFilter = useCallback((v) => { setFilterType(v || ''); setPage(1); }, []);
+  const handleStatusFilter = useCallback((v) => { setFilterStatus(v || ''); setPage(1); }, []);
+
+  const allColumns = useMemo(() => [
     { title: 'Company Name', dataIndex: 'company_name', key: 'company_name', width: 200 },
     {
       title: 'Type', key: 'company_type', width: 130,
       render: (_, r) => {
         const t = COMPANY_TYPES.find(ct => ct.value === r.company_type);
         return <Tag color={t?.color}>{t?.label || r.company_type}</Tag>;
-      }
+      },
     },
     { title: 'Email', dataIndex: 'email', key: 'email', width: 180 },
     { title: 'Phone', dataIndex: 'phone', key: 'phone', width: 130 },
@@ -129,7 +160,7 @@ function CompaniesPage() {
     { title: 'Branches', key: 'branches', width: 80, align: 'center', render: (_, r) => r._count?.branches || 0 },
     { title: 'Status', key: 'status', width: 100, render: (_, r) => <StatusBadge status={r.status} /> },
     {
-      title: 'Actions', key: 'actions', width: 200,
+      title: 'Actions', key: 'actions', width: 220,
       render: (_, record) => (
         <Space>
           <PermissionGuard module="companies" action="can_view">
@@ -140,9 +171,7 @@ function CompaniesPage() {
           </PermissionGuard>
           <PermissionGuard module="companies" action="can_delete">
             {record.status === 'ACTIVE' ? (
-              <Popconfirm title="Deactivate this company and all its mappings?" onConfirm={() => deactivate(record.company_id)}>
-                <Button size="small" danger icon={<StopOutlined />}>Deactivate</Button>
-              </Popconfirm>
+              <Button size="small" danger icon={<StopOutlined />} onClick={() => handleDeactivate(record)}>Deactivate</Button>
             ) : (
               <Button size="small" icon={<CheckCircleOutlined />} onClick={() => reactivate(record.company_id)}>Reactivate</Button>
             )}
@@ -150,27 +179,23 @@ function CompaniesPage() {
         </Space>
       ),
     },
-  ];
+  ], [handleEdit, handleDeactivate, reactivate]);
 
   const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
 
-  const formTabs = [
+  const formTabs = useMemo(() => [
     {
       key: 'details',
       label: 'Company Details',
       children: (
         <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item name="company_name" label="Company Name" rules={[{ required: true }]}><Input /></Form.Item>
-          </Col>
+          <Col span={12}><Form.Item name="company_name" label="Company Name" rules={[{ required: true }]}><Input /></Form.Item></Col>
           <Col span={12}>
             <Form.Item name="company_type" label="Company Type" rules={[{ required: true }]}>
               <Select options={COMPANY_TYPES} />
             </Form.Item>
           </Col>
-          <Col span={24}>
-            <Form.Item name="address" label="Address"><Input.TextArea rows={2} /></Form.Item>
-          </Col>
+          <Col span={24}><Form.Item name="address" label="Address"><Input.TextArea rows={2} /></Form.Item></Col>
           <LocationFields namePrefix={[]} colSpan={8} />
           <Col span={12}><Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Invalid email format' }]}><Input /></Form.Item></Col>
           <Col span={12}><Form.Item name="phone" label="Phone" rules={[{ pattern: /^[0-9]{10,15}$/, message: 'Must be 10-15 digits' }]}><Input /></Form.Item></Col>
@@ -212,8 +237,8 @@ function CompaniesPage() {
                     <Col span={8}><Form.Item {...restField} name={[name, 'pincode']} label="Pincode"><Input /></Form.Item></Col>
                     <Col span={8}><Form.Item {...restField} name={[name, 'contact_number']} label="Contact Number" rules={[{ pattern: /^[0-9]{10,15}$/, message: 'Must be 10-15 digits' }]}><Input /></Form.Item></Col>
                     <Col span={8}><Form.Item {...restField} name={[name, 'email']} label="Email" rules={[{ type: 'email', message: 'Invalid email format' }]}><Input /></Form.Item></Col>
-                    <Col span={4}><Form.Item {...restField} name={[name, 'latitude']} label="Latitude" rules={[{ type: 'number', min: -90, max: 90, message: 'Must be between -90 and 90' }]}><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
-                    <Col span={4}><Form.Item {...restField} name={[name, 'longitude']} label="Longitude" rules={[{ type: 'number', min: -180, max: 180, message: 'Must be between -180 and 180' }]}><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
+                    <Col span={4}><Form.Item {...restField} name={[name, 'latitude']} label="Latitude" rules={[{ type: 'number', min: -90, max: 90 }]}><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
+                    <Col span={4}><Form.Item {...restField} name={[name, 'longitude']} label="Longitude" rules={[{ type: 'number', min: -180, max: 180 }]}><InputNumber style={{ width: '100%' }} /></Form.Item></Col>
                   </Row>
                   <Form.Item {...restField} name={[name, 'branch_id']} hidden><Input /></Form.Item>
                 </Card>
@@ -224,7 +249,7 @@ function CompaniesPage() {
         </Form.List>
       ),
     },
-  ];
+  ], [editingId]);
 
   return (
     <div>
@@ -250,16 +275,18 @@ function CompaniesPage() {
       <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }} wrap>
         <Input.Search
           placeholder="Search by name, email, GST, or mapped product..."
-          allowClear onSearch={(v) => { setSearch(v); setPage(1); }}
-          style={{ width: 350 }} prefix={<SearchOutlined />}
+          allowClear
+          onSearch={handleSearch}
+          style={{ width: 350 }}
+          prefix={<SearchOutlined />}
         />
         <Space>
           <Select placeholder="Company Type" allowClear style={{ width: 160 }}
-            value={filterType || undefined} onChange={(v) => { setFilterType(v || ''); setPage(1); }}
+            value={filterType || undefined} onChange={handleTypeFilter}
             options={COMPANY_TYPES}
           />
           <Select placeholder="Status" allowClear style={{ width: 120 }}
-            value={filterStatus || undefined} onChange={(v) => { setFilterStatus(v || ''); setPage(1); }}
+            value={filterStatus || undefined} onChange={handleStatusFilter}
             options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'INACTIVE', label: 'Inactive' }]}
           />
           <ColumnSelector columns={allColumns} hiddenKeys={hiddenKeys} onToggle={toggleColumn} />
@@ -267,18 +294,29 @@ function CompaniesPage() {
       </Space>
 
       <Table
-        columns={visibleColumns} dataSource={listData?.data || []}
-        loading={isLoading} rowKey="company_id"
+        columns={visibleColumns}
+        dataSource={listData?.data || []}
+        loading={isLoading}
+        rowKey="company_id"
         pagination={{
-          current: page, total: listData?.pagination?.total || 0, pageSize: 20,
-          showSizeChanger: false, showTotal: (t) => `Total ${t} companies`, onChange: setPage,
+          current: page,
+          total: listData?.pagination?.total || 0,
+          pageSize: 20,
+          showSizeChanger: false,
+          showTotal: (t) => `Total ${t} companies`,
+          onChange: setPage,
         }}
         size="middle"
       />
 
-      <FormModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingId(null); }}
-        onSubmit={handleSubmit} title={editingId ? 'Edit Company' : 'Add Company'}
-        loading={creating || updating} width={800} form={form}
+      <FormModal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditingId(null); }}
+        onSubmit={handleSubmit}
+        title={editingId ? 'Edit Company' : 'Add Company'}
+        loading={creating || updating}
+        width={800}
+        form={form}
       >
         <Tabs items={formTabs} />
       </FormModal>

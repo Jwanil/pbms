@@ -1,6 +1,6 @@
 # Product & Buyer Management System (PBMS) — Project Handbook
 
-> **Last updated:** June 2026 | **Version:** 1.0 | **Author:** DEV ITPL
+> **Last updated:** June 2026 | **Version:** 1.0 | **Author:** JWANIL MODI
 
 ---
 

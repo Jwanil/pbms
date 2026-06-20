@@ -37,7 +37,7 @@ const getCompanies = async ({ page = 1, limit = 20, search = '', company_type, s
         status: true,
         created_by: true,
         created_at: true,
-        _count: { select: { branches: true } },
+        _count: { select: { branches: true, mappings: { where: { is_active: true } } } },
       }
     }),
     prisma.company.count({ where })

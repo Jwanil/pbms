@@ -98,7 +98,8 @@ const { Router } = require('express');
 const {
   getProductsController, getProductByIdController, createProductController,
   updateProductController, deactivateProductController, reactivateProductController,
-  getFormDataController, exportProductsController, sampleCsvProductsController, importProductsController
+  getFormDataController, exportProductsController, sampleCsvProductsController,
+  importProductsController, checkDuplicatesController, importJsonController
 } = require('../../controllers/productController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
@@ -149,6 +150,8 @@ router.get('/form-data', verifyToken, roleGuard('products', 'can_view'), getForm
 router.get('/:id', verifyToken, roleGuard('products', 'can_view'), getProductByIdController);
 router.post('/', verifyToken, roleGuard('products', 'can_create'), createProductController);
 router.post('/import', verifyToken, roleGuard('products', 'can_create'), uploadCsv.single('file'), importProductsController);
+router.post('/check-duplicates', verifyToken, roleGuard('products', 'can_view'), checkDuplicatesController);
+router.post('/import-json', verifyToken, roleGuard('products', 'can_create'), importJsonController);
 router.put('/:id', verifyToken, roleGuard('products', 'can_edit'), updateProductController);
 router.patch('/:id/deactivate', verifyToken, roleGuard('products', 'can_delete'), deactivateProductController);
 router.patch('/:id/reactivate', verifyToken, roleGuard('products', 'can_edit'), reactivateProductController);

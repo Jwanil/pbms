@@ -38,6 +38,7 @@ const getProducts = async ({ page = 1, limit = 20, search = '', category_id, gra
         category: { select: { category_id: true, category_name: true } },
         grade: { select: { grade_id: true, grade_name: true } },
         packaging: { select: { packaging_id: true, packaging_name: true } },
+        _count: { select: { mappings: { where: { is_active: true } } } },
       }
     }),
     prisma.product.count({ where })
