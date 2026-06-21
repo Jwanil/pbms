@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Table, Button, Space, Input, Select, Form, Tabs, InputNumber, Modal, Spin, Divider } from 'antd';
+import { Table, Button, Space, Input, Select, Form, Tabs, InputNumber, Modal, Row, Col, Divider, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined, UploadOutlined, WarningFilled } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../../components/PageHeader';
@@ -33,13 +33,16 @@ function ProductsPage() {
   const [editingId, setEditingId] = useState(null);
   const [viewId, setViewId] = useState(null);
   const [uploadFiles, setUploadFiles] = useState([]);
+  // Controlled deactivate modals (antd v5 recommended pattern)
+  const [deactivateTarget, setDeactivateTarget] = useState(null);   // record to confirm-deactivate
+  const [mappingBlockTarget, setMappingBlockTarget] = useState(null); // record blocked due to mappings
 
   const { data: listData, isLoading } = useProducts({ page, search, category_id: filterCategory, grade_id: filterGrade, status: filterStatus });
   const { data: editData } = useProduct(editingId);
   const { data: formData } = useProductFormData();
   const { mutate: create, isPending: creating } = useCreateProduct();
   const { mutate: update, isPending: updating } = useUpdateProduct();
-  const { mutate: deactivate } = useDeactivateProduct();
+  const { mutate: deactivate, isPending: deactivating } = useDeactivateProduct();
   const { mutate: reactivate } = useReactivateProduct();
   const { mutateAsync: uploadDoc } = useUploadDocument();
   const { applyServerErrors } = useFormErrors(form);
@@ -62,36 +65,22 @@ function ProductsPage() {
     setModalOpen(true);
   }, []);
 
-  const handleDeactivate = useCallback((record) => {
+  const handleDeactivateClick = useCallback((record) => {
     const activeMappings = record._count?.mappings ?? 0;
     if (activeMappings > 0) {
-      Modal.warning({
-        title: 'Cannot Deactivate — Active Mappings Exist',
-        content: (
-          <div>
-            <p>
-              <strong>{record.product_name}</strong> is currently mapped to{' '}
-              <strong>{activeMappings} active company mapping{activeMappings !== 1 ? 's' : ''}</strong>.
-            </p>
-            <p style={{ color: '#8c8c8c', marginTop: 8 }}>
-              You must deactivate or remove all mappings before deactivating this product.
-              Go to the <strong>Mapping</strong> page to manage them.
-            </p>
-          </div>
-        ),
-        okText: 'Understood',
-        icon: <WarningFilled style={{ color: '#faad14' }} />,
-      });
-      return;
+      setMappingBlockTarget(record);
+    } else {
+      setDeactivateTarget(record);
     }
-    Modal.confirm({
-      title: 'Deactivate this product?',
-      content: `"${record.product_name}" will be set to INACTIVE.`,
-      okText: 'Deactivate',
-      okType: 'danger',
-      onOk: () => deactivate(record.product_id),
+  }, []);
+
+  const handleDeactivateConfirm = useCallback(() => {
+    if (!deactivateTarget) return;
+    deactivate(deactivateTarget.product_id, {
+      onSuccess: () => setDeactivateTarget(null),
+      onError: () => setDeactivateTarget(null),
     });
-  }, [deactivate]);
+  }, [deactivate, deactivateTarget]);
 
   const handleSubmit = useCallback((values) => {
     if (editingId) {
@@ -172,15 +161,19 @@ function ProductsPage() {
           </PermissionGuard>
           <PermissionGuard module="products" action="can_delete">
             {record.status === 'ACTIVE' ? (
-              <Button size="small" danger icon={<StopOutlined />} onClick={() => handleDeactivate(record)}>Deactivate</Button>
+              <Button size="small" danger icon={<StopOutlined />} onClick={() => handleDeactivateClick(record)}>
+                Deactivate
+              </Button>
             ) : (
-              <Button size="small" icon={<CheckCircleOutlined />} onClick={() => reactivate(record.product_id)}>Reactivate</Button>
+              <Button size="small" icon={<CheckCircleOutlined />} onClick={() => reactivate(record.product_id)}>
+                Reactivate
+              </Button>
             )}
           </PermissionGuard>
         </Space>
       ),
     },
-  ], [handleEdit, handleDeactivate, reactivate]);
+  ], [handleEdit, handleDeactivateClick, reactivate]);
 
   const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
 
@@ -291,7 +284,6 @@ function ProductsPage() {
           allowClear
           onSearch={handleSearch}
           style={{ width: 350 }}
-          prefix={<SearchOutlined />}
         />
         <Space>
           {filterBar}
@@ -314,6 +306,52 @@ function ProductsPage() {
         }}
         size="middle"
       />
+
+      {/* ── Controlled: Mapping-block warning ── */}
+      <Modal
+        open={!!mappingBlockTarget}
+        title={
+          <span>
+            <WarningFilled style={{ color: '#faad14', marginRight: 8 }} />
+            Cannot Deactivate — Active Mappings Exist
+          </span>
+        }
+        onOk={() => setMappingBlockTarget(null)}
+        onCancel={() => setMappingBlockTarget(null)}
+        cancelButtonProps={{ style: { display: 'none' } }}
+        okText="Understood"
+      >
+        {mappingBlockTarget && (
+          <div>
+            <p>
+              <strong>{mappingBlockTarget.product_name}</strong> is currently mapped to{' '}
+              <strong>{mappingBlockTarget._count?.mappings} active company mapping{mappingBlockTarget._count?.mappings !== 1 ? 's' : ''}</strong>.
+            </p>
+            <p style={{ color: '#8c8c8c', marginTop: 8 }}>
+              You must deactivate or remove all mappings before deactivating this product.
+              Go to the <strong>Mapping</strong> page to manage them.
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Controlled: Deactivate confirm ── */}
+      <Modal
+        open={!!deactivateTarget}
+        title="Deactivate this product?"
+        onOk={handleDeactivateConfirm}
+        onCancel={() => setDeactivateTarget(null)}
+        okText="Deactivate"
+        okType="danger"
+        confirmLoading={deactivating}
+      >
+        {deactivateTarget && (
+          <p>
+            <strong>"{deactivateTarget.product_name}"</strong> will be set to INACTIVE.
+            It will no longer appear in active lists.
+          </p>
+        )}
+      </Modal>
 
       <FormModal
         open={modalOpen}

@@ -12,7 +12,7 @@ const { Panel } = Collapse;
 
 const MODULE_FIELDS = {
   products: [
-    { name: 'product_name', required: true, uniqueKey: true },
+    { name: 'product_name', required: true },
     { name: 'sku', required: true, uniqueKey: true },
     { name: 'composition', required: false },
     { name: 'category_name', required: false },

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Table, Button, Space, Input, Select, Form, Tabs, InputNumber, Modal, Spin, Card, Row, Col, Divider } from 'antd';
+import { Table, Button, Space, Input, Select, Form, Tabs, InputNumber, Modal, Row, Col, Divider, Tag, Card } from 'antd';
 import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, DeleteOutlined, EyeOutlined, UploadOutlined, WarningFilled } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../../components/PageHeader';
@@ -19,7 +19,7 @@ import {
 import { useUploadDocument } from '../../api/documentsApi';
 import useFormErrors from '../../hooks/useFormErrors';
 import useColumnVisibility from '../../hooks/useColumnVisibility';
-import { Tag, message } from 'antd';
+import { message } from 'antd';
 
 const COMPANY_TYPES = [
   { value: 'MANUFACTURER', label: 'Manufacturer', color: 'blue' },
@@ -40,12 +40,15 @@ function CompaniesPage() {
   const [editingId, setEditingId] = useState(null);
   const [viewId, setViewId] = useState(null);
   const [uploadFiles, setUploadFiles] = useState([]);
+  // Controlled deactivate modals (antd v5 recommended pattern)
+  const [deactivateTarget, setDeactivateTarget] = useState(null);    // record to confirm-deactivate
+  const [mappingBlockTarget, setMappingBlockTarget] = useState(null); // record blocked due to mappings
 
   const { data: listData, isLoading } = useCompanies({ page, search, company_type: filterType, status: filterStatus });
   const { data: editData } = useCompany(editingId);
   const { mutate: create, isPending: creating } = useCreateCompany();
   const { mutate: update, isPending: updating } = useUpdateCompany();
-  const { mutate: deactivate } = useDeactivateCompany();
+  const { mutate: deactivate, isPending: deactivating } = useDeactivateCompany();
   const { mutate: reactivate } = useReactivateCompany();
   const { mutateAsync: uploadDoc } = useUploadDocument();
   const { applyServerErrors } = useFormErrors(form);
@@ -69,36 +72,22 @@ function CompaniesPage() {
     setModalOpen(true);
   }, []);
 
-  const handleDeactivate = useCallback((record) => {
+  const handleDeactivateClick = useCallback((record) => {
     const activeMappings = record._count?.mappings ?? 0;
     if (activeMappings > 0) {
-      Modal.warning({
-        title: 'Cannot Deactivate — Active Mappings Exist',
-        content: (
-          <div>
-            <p>
-              <strong>{record.company_name}</strong> has{' '}
-              <strong>{activeMappings} active product mapping{activeMappings !== 1 ? 's' : ''}</strong>.
-            </p>
-            <p style={{ color: '#8c8c8c', marginTop: 8 }}>
-              You must deactivate or remove all mappings before deactivating this company.
-              Go to the <strong>Mapping</strong> page to manage them.
-            </p>
-          </div>
-        ),
-        okText: 'Understood',
-        icon: <WarningFilled style={{ color: '#faad14' }} />,
-      });
-      return;
+      setMappingBlockTarget(record);
+    } else {
+      setDeactivateTarget(record);
     }
-    Modal.confirm({
-      title: 'Deactivate this company?',
-      content: `"${record.company_name}" and all its mappings will be set to INACTIVE.`,
-      okText: 'Deactivate',
-      okType: 'danger',
-      onOk: () => deactivate(record.company_id),
+  }, []);
+
+  const handleDeactivateConfirm = useCallback(() => {
+    if (!deactivateTarget) return;
+    deactivate(deactivateTarget.company_id, {
+      onSuccess: () => setDeactivateTarget(null),
+      onError: () => setDeactivateTarget(null),
     });
-  }, [deactivate]);
+  }, [deactivate, deactivateTarget]);
 
   const handleSubmit = useCallback((values) => {
     if (editingId) {
@@ -171,15 +160,19 @@ function CompaniesPage() {
           </PermissionGuard>
           <PermissionGuard module="companies" action="can_delete">
             {record.status === 'ACTIVE' ? (
-              <Button size="small" danger icon={<StopOutlined />} onClick={() => handleDeactivate(record)}>Deactivate</Button>
+              <Button size="small" danger icon={<StopOutlined />} onClick={() => handleDeactivateClick(record)}>
+                Deactivate
+              </Button>
             ) : (
-              <Button size="small" icon={<CheckCircleOutlined />} onClick={() => reactivate(record.company_id)}>Reactivate</Button>
+              <Button size="small" icon={<CheckCircleOutlined />} onClick={() => reactivate(record.company_id)}>
+                Reactivate
+              </Button>
             )}
           </PermissionGuard>
         </Space>
       ),
     },
-  ], [handleEdit, handleDeactivate, reactivate]);
+  ], [handleEdit, handleDeactivateClick, reactivate]);
 
   const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
 
@@ -278,7 +271,6 @@ function CompaniesPage() {
           allowClear
           onSearch={handleSearch}
           style={{ width: 350 }}
-          prefix={<SearchOutlined />}
         />
         <Space>
           <Select placeholder="Company Type" allowClear style={{ width: 160 }}
@@ -308,6 +300,51 @@ function CompaniesPage() {
         }}
         size="middle"
       />
+
+      {/* ── Controlled: Mapping-block warning ── */}
+      <Modal
+        open={!!mappingBlockTarget}
+        title={
+          <span>
+            <WarningFilled style={{ color: '#faad14', marginRight: 8 }} />
+            Cannot Deactivate — Active Mappings Exist
+          </span>
+        }
+        onOk={() => setMappingBlockTarget(null)}
+        onCancel={() => setMappingBlockTarget(null)}
+        cancelButtonProps={{ style: { display: 'none' } }}
+        okText="Understood"
+      >
+        {mappingBlockTarget && (
+          <div>
+            <p>
+              <strong>{mappingBlockTarget.company_name}</strong> has{' '}
+              <strong>{mappingBlockTarget._count?.mappings} active product mapping{mappingBlockTarget._count?.mappings !== 1 ? 's' : ''}</strong>.
+            </p>
+            <p style={{ color: '#8c8c8c', marginTop: 8 }}>
+              You must deactivate or remove all mappings before deactivating this company.
+              Go to the <strong>Mapping</strong> page to manage them.
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Controlled: Deactivate confirm ── */}
+      <Modal
+        open={!!deactivateTarget}
+        title="Deactivate this company?"
+        onOk={handleDeactivateConfirm}
+        onCancel={() => setDeactivateTarget(null)}
+        okText="Deactivate"
+        okType="danger"
+        confirmLoading={deactivating}
+      >
+        {deactivateTarget && (
+          <p>
+            <strong>"{deactivateTarget.company_name}"</strong> and all its active mappings will be set to INACTIVE.
+          </p>
+        )}
+      </Modal>
 
       <FormModal
         open={modalOpen}
