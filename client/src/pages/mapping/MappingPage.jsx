@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Table, Button, Space, Select, Tag, Form, Popconfirm, InputNumber } from 'antd';
 import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, EyeOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
@@ -57,20 +57,19 @@ function MappingPage() {
     }
   }, [editData, editingId, form]);
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     setEditingId(null);
     form.resetFields();
     setModalOpen(true);
-  };
+  }, [form]);
 
-  const handleEdit = (record) => {
+  const handleEdit = useCallback((record) => {
     setEditingId(record.mapping_id);
     setModalOpen(true);
-  };
+  }, []);
 
-  const handleSubmit = (values) => {
+  const handleSubmit = useCallback((values) => {
     if (editingId) {
-      // Only send updatable fields
       const { moq, price_range_min, price_range_max, lead_time_days } = values;
       update({ id: editingId, data: { moq, price_range_min, price_range_max, lead_time_days } }, {
         onSuccess: () => { setModalOpen(false); setEditingId(null); },
@@ -97,9 +96,14 @@ function MappingPage() {
         }
       });
     }
-  };
+  }, [editingId, update, create, form, applyServerErrors]);
 
-  const allColumns = [
+  const handleCompanyFilter = useCallback((v) => { setFilterCompany(v || ''); setPage(1); }, []);
+  const handleProductFilter = useCallback((v) => { setFilterProduct(v || ''); setPage(1); }, []);
+  const handleRoleFilter = useCallback((v) => { setFilterRole(v || ''); setPage(1); }, []);
+  const handleActiveFilter = useCallback((v) => { setFilterActive(v !== undefined ? v : ''); setPage(1); }, []);
+
+  const allColumns = useMemo(() => [
     { title: 'Company', key: 'company', width: 200, render: (_, r) => r.company?.company_name || '—' },
     { title: 'Product', key: 'product', width: 200, render: (_, r) => `${r.product?.product_name || '—'} (${r.product?.sku || ''})` },
     {
@@ -146,9 +150,44 @@ function MappingPage() {
         </Space>
       ),
     },
-  ];
+  ], [handleEdit, deactivate, reactivate]);
 
   const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
+
+  const formFields = useMemo(() => (
+    <>
+      <Form.Item name="moq" label="Minimum Order Quantity (MOQ)" rules={[
+        { type: 'number', min: 0.01, message: 'MOQ must be greater than 0' },
+        { type: 'number', max: 999999999, message: 'MOQ value is too large' },
+      ]}>
+        <InputNumber style={{ width: '100%' }} min={0.01} step={0.01} placeholder="e.g. 500" />
+      </Form.Item>
+      <Form.Item name="price_range_min" label="Price Range Min (₹)" rules={[
+        { type: 'number', min: 0, message: 'Minimum price cannot be negative' },
+      ]}>
+        <InputNumber style={{ width: '100%' }} min={0} step={0.01} placeholder="e.g. 120.00" />
+      </Form.Item>
+      <Form.Item name="price_range_max" label="Price Range Max (₹)" dependencies={['price_range_min']} rules={[
+        { type: 'number', min: 0, message: 'Maximum price cannot be negative' },
+        ({ getFieldValue }) => ({
+          validator(_, value) {
+            const min = getFieldValue('price_range_min');
+            if (!value || !min || value >= min) return Promise.resolve();
+            return Promise.reject(new Error('Max price must be ≥ min price'));
+          },
+        }),
+      ]}>
+        <InputNumber style={{ width: '100%' }} min={0} step={0.01} placeholder="e.g. 150.00" />
+      </Form.Item>
+      <Form.Item name="lead_time_days" label="Lead Time (Days)" rules={[
+        { type: 'number', min: 1, message: 'Lead time must be at least 1 day' },
+        { type: 'number', max: 3650, message: 'Lead time cannot exceed 3650 days' },
+        { type: 'integer', message: 'Lead time must be a whole number' },
+      ]}>
+        <InputNumber style={{ width: '100%' }} min={1} max={3650} step={1} precision={0} placeholder="e.g. 14" />
+      </Form.Item>
+    </>
+  ), []);
 
   return (
     <div>
@@ -168,20 +207,20 @@ function MappingPage() {
       <Space style={{ marginBottom: 16 }} wrap>
         <Select placeholder="Company" allowClear showSearch optionFilterProp="label"
           style={{ width: 220 }}
-          value={filterCompany || undefined} onChange={(v) => { setFilterCompany(v || ''); setPage(1); }}
+          value={filterCompany || undefined} onChange={handleCompanyFilter}
           options={companyOptions || []}
         />
         <Select placeholder="Product" allowClear showSearch optionFilterProp="label"
           style={{ width: 220 }}
-          value={filterProduct || undefined} onChange={(v) => { setFilterProduct(v || ''); setPage(1); }}
+          value={filterProduct || undefined} onChange={handleProductFilter}
           options={productOptions || []}
         />
         <Select placeholder="Role Type" allowClear style={{ width: 150 }}
-          value={filterRole || undefined} onChange={(v) => { setFilterRole(v || ''); setPage(1); }}
+          value={filterRole || undefined} onChange={handleRoleFilter}
           options={ROLE_TYPES}
         />
         <Select placeholder="Status" allowClear style={{ width: 120 }}
-          value={filterActive || undefined} onChange={(v) => { setFilterActive(v !== undefined ? v : ''); setPage(1); }}
+          value={filterActive || undefined} onChange={handleActiveFilter}
           options={[{ value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' }]}
         />
         <ColumnSelector columns={allColumns} hiddenKeys={hiddenKeys} onToggle={toggleColumn} />
@@ -225,36 +264,7 @@ function MappingPage() {
             <p style={{ margin: 0 }}><strong>Role:</strong> {editData?.role_type}</p>
           </div>
         )}
-        <Form.Item name="moq" label="Minimum Order Quantity (MOQ)" rules={[
-          { type: 'number', min: 0.01, message: 'MOQ must be greater than 0' },
-          { type: 'number', max: 999999999, message: 'MOQ value is too large' },
-        ]}>
-          <InputNumber style={{ width: '100%' }} min={0.01} step={0.01} placeholder="e.g. 500" />
-        </Form.Item>
-        <Form.Item name="price_range_min" label="Price Range Min (₹)" rules={[
-          { type: 'number', min: 0, message: 'Minimum price cannot be negative' },
-        ]}>
-          <InputNumber style={{ width: '100%' }} min={0} step={0.01} placeholder="e.g. 120.00" />
-        </Form.Item>
-        <Form.Item name="price_range_max" label="Price Range Max (₹)" dependencies={['price_range_min']} rules={[
-          { type: 'number', min: 0, message: 'Maximum price cannot be negative' },
-          ({ getFieldValue }) => ({
-            validator(_, value) {
-              const min = getFieldValue('price_range_min');
-              if (!value || !min || value >= min) return Promise.resolve();
-              return Promise.reject(new Error('Max price must be ≥ min price'));
-            },
-          }),
-        ]}>
-          <InputNumber style={{ width: '100%' }} min={0} step={0.01} placeholder="e.g. 150.00" />
-        </Form.Item>
-        <Form.Item name="lead_time_days" label="Lead Time (Days)" rules={[
-          { type: 'number', min: 1, message: 'Lead time must be at least 1 day' },
-          { type: 'number', max: 3650, message: 'Lead time cannot exceed 3650 days' },
-          { type: 'integer', message: 'Lead time must be a whole number' },
-        ]}>
-          <InputNumber style={{ width: '100%' }} min={1} max={3650} step={1} precision={0} placeholder="e.g. 14" />
-        </Form.Item>
+        {formFields}
       </FormModal>
 
       <MappingViewDrawer open={!!viewId} mappingId={viewId} onClose={() => setViewId(null)} />

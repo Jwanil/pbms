@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button, Form, Input, Select, Space, Tag, Tooltip, Modal } from 'antd';
 import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, SafetyOutlined, KeyOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
@@ -14,6 +14,7 @@ import {
 } from '../../api/usersApi';
 import useFormErrors from '../../hooks/useFormErrors';
 import useAuthStore from '../../store/authStore';
+import { message } from 'antd';
 
 function UsersPage() {
   const [page, setPage] = useState(1);
@@ -27,7 +28,7 @@ function UsersPage() {
   const [resetPwdUserId, setResetPwdUserId] = useState(null);
   const [form] = Form.useForm();
   const [resetPwdForm] = Form.useForm();
-  
+
   const { user } = useAuthStore();
 
   const { data, isLoading } = useUsers({ page, limit: 20, search, status: statusFilter });
@@ -37,28 +38,32 @@ function UsersPage() {
   const { mutate: deactivateUser, isPending: isDeactivating } = useDeactivateUser();
   const { mutate: reactivateUser } = useReactivateUser();
   const { mutate: resetPassword, isPending: isResetting } = useResetUserPassword();
-
   const { applyServerErrors } = useFormErrors(form);
 
-  const openAdd = () => { setEditingUser(null); form.resetFields(); setModalOpen(true); };
-  const openEdit = (user) => {
-    setEditingUser(user);
+  const openAdd = useCallback(() => {
+    setEditingUser(null);
+    form.resetFields();
+    setModalOpen(true);
+  }, [form]);
+
+  const openEdit = useCallback((record) => {
+    setEditingUser(record);
     form.setFieldsValue({
-      name: user.name, email: user.email, username: user.username,
-      mobile: user.mobile, role_id: user.role.role_id,
-      department_id: user.department?.department_id,
+      name: record.name, email: record.email, username: record.username,
+      mobile: record.mobile, role_id: record.role.role_id,
+      department_id: record.department?.department_id,
     });
     setModalOpen(true);
-  };
+  }, [form]);
 
-  const handleSubmit = (values) => {
+  const handleSubmit = useCallback((values) => {
     if (editingUser) {
       updateUser({ id: editingUser.user_id, data: values }, {
         onSuccess: () => setModalOpen(false),
         onError: (err) => {
           applyServerErrors(err);
           if (!err?.response?.data?.errors?.length) {
-            import('antd').then(({ message }) => message.error(err?.response?.data?.message || 'Failed to update user'));
+            message.error(err?.response?.data?.message || 'Failed to update user');
           }
         }
       });
@@ -68,19 +73,55 @@ function UsersPage() {
         onError: (err) => {
           applyServerErrors(err);
           if (!err?.response?.data?.errors?.length) {
-            import('antd').then(({ message }) => message.error(err?.response?.data?.message || 'Failed to create user'));
+            message.error(err?.response?.data?.message || 'Failed to create user');
           }
         }
       });
     }
-  };
+  }, [editingUser, updateUser, createUser, applyServerErrors]);
 
-  const columns = [
+  const handleSearch = useCallback((val) => { setSearch(val); setPage(1); }, []);
+  const handlePageChange = useCallback((p) => setPage(p), []);
+  const handleStatusFilter = useCallback((val) => { setStatusFilter(val || ''); setPage(1); }, []);
+
+  const handleOpenPermissions = useCallback((record) => {
+    setPermUserId(record.user_id);
+    setPermUserName(record.name);
+  }, []);
+
+  const handleClosePermissions = useCallback(() => setPermUserId(null), []);
+
+  const handleResetPwdClose = useCallback(() => {
+    setResetPwdUserId(null);
+    resetPwdForm.resetFields();
+  }, [resetPwdForm]);
+
+  const handleResetPwdSubmit = useCallback((values) => {
+    resetPassword({ userId: resetPwdUserId, newPassword: values.new_password }, {
+      onSuccess: () => { setResetPwdUserId(null); resetPwdForm.resetFields(); }
+    });
+  }, [resetPassword, resetPwdUserId, resetPwdForm]);
+
+  const handleDeactivateConfirm = useCallback(() => {
+    deactivateUser(deactivateTarget.user_id, { onSuccess: () => setDeactivateTarget(null) });
+  }, [deactivateUser, deactivateTarget]);
+
+  const roleOptions = useMemo(() =>
+    (formData?.roles || []).map(r => ({ label: r.role_name, value: r.role_id })),
+    [formData?.roles]
+  );
+
+  const departmentOptions = useMemo(() =>
+    (formData?.departments || []).map(d => ({ label: d.department_name, value: d.department_id })),
+    [formData?.departments]
+  );
+
+  const columns = useMemo(() => [
     { title: 'Name', dataIndex: 'name', key: 'name', sorter: (a, b) => a.name.localeCompare(b.name) },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { title: 'Username', dataIndex: 'username', key: 'username' },
     { title: 'Role', key: 'role', render: (_, r) => <Tag color="blue">{r.role?.role_name}</Tag> },
-    { title: 'Department', key: 'dept', render: (_, r) => r.department?.department_name || '\u2014' },
+    { title: 'Department', key: 'dept', render: (_, r) => r.department?.department_name || '—' },
     { title: 'Status', key: 'status', render: (_, r) => <StatusBadge status={r.status} /> },
     {
       title: 'Actions', key: 'actions',
@@ -104,25 +145,28 @@ function UsersPage() {
           </PermissionGuard>
           <PermissionGuard module="users" action="can_edit">
             <Tooltip title="Permissions">
-              <Button icon={<SafetyOutlined />} size="small" onClick={() => {
-                setPermUserId(record.user_id);
-                setPermUserName(record.name);
-              }} />
+              <Button icon={<SafetyOutlined />} size="small" onClick={() => handleOpenPermissions(record)} />
             </Tooltip>
           </PermissionGuard>
           {user?.role === 'SUPER_ADMIN' && (
             <Tooltip title="Reset Password">
-              <Button
-                icon={<KeyOutlined />}
-                size="small"
-                onClick={() => setResetPwdUserId(record.user_id)}
-              />
+              <Button icon={<KeyOutlined />} size="small" onClick={() => setResetPwdUserId(record.user_id)} />
             </Tooltip>
           )}
         </Space>
       )
     }
-  ];
+  ], [openEdit, reactivateUser, handleOpenPermissions, user?.role]);
+
+  const statusFilterElement = useMemo(() => (
+    <Select
+      placeholder="Filter by status"
+      allowClear
+      style={{ width: 160 }}
+      onChange={handleStatusFilter}
+      options={[{ label: 'Active', value: 'ACTIVE' }, { label: 'Inactive', value: 'INACTIVE' }]}
+    />
+  ), [handleStatusFilter]);
 
   return (
     <div>
@@ -146,17 +190,9 @@ function UsersPage() {
         total={data?.pagination?.total || 0}
         rowKey="user_id"
         searchPlaceholder="Search by name, email, or username..."
-        onSearch={(val) => { setSearch(val); setPage(1); }}
-        onPageChange={(p) => setPage(p)}
-        extraFilters={
-          <Select
-            placeholder="Filter by status"
-            allowClear
-            style={{ width: 160 }}
-            onChange={(val) => { setStatusFilter(val || ''); setPage(1); }}
-            options={[{ label: 'Active', value: 'ACTIVE' }, { label: 'Inactive', value: 'INACTIVE' }]}
-          />
-        }
+        onSearch={handleSearch}
+        onPageChange={handlePageChange}
+        extraFilters={statusFilterElement}
       />
 
       <FormModal
@@ -197,31 +233,24 @@ function UsersPage() {
           <Input placeholder="Enter mobile number" />
         </Form.Item>
         <Form.Item name="role_id" label="Role" rules={[{ required: true }]}>
-          <Select
-            placeholder="Select role"
-            options={(formData?.roles || []).map(r => ({ label: r.role_name, value: r.role_id }))}
-          />
+          <Select placeholder="Select role" options={roleOptions} />
         </Form.Item>
         <Form.Item name="department_id" label="Department">
-          <Select
-            placeholder="Select department (optional)"
-            allowClear
-            options={(formData?.departments || []).map(d => ({ label: d.department_name, value: d.department_id }))}
-          />
+          <Select placeholder="Select department (optional)" allowClear options={departmentOptions} />
         </Form.Item>
       </FormModal>
 
       <ConfirmDeactivate
         open={!!deactivateTarget}
         recordName={deactivateTarget?.name}
-        onConfirm={() => deactivateUser(deactivateTarget.user_id, { onSuccess: () => setDeactivateTarget(null) })}
+        onConfirm={handleDeactivateConfirm}
         onCancel={() => setDeactivateTarget(null)}
         loading={isDeactivating}
       />
 
       <UserPermissionsModal
         open={!!permUserId}
-        onClose={() => setPermUserId(null)}
+        onClose={handleClosePermissions}
         userId={permUserId}
         userName={permUserName}
       />
@@ -229,16 +258,12 @@ function UsersPage() {
       <Modal
         title="Reset User Password"
         open={!!resetPwdUserId}
-        onCancel={() => { setResetPwdUserId(null); resetPwdForm.resetFields(); }}
+        onCancel={handleResetPwdClose}
         onOk={() => resetPwdForm.submit()}
         okText="Reset Password"
         confirmLoading={isResetting}
       >
-        <Form form={resetPwdForm} layout="vertical" onFinish={(values) => {
-          resetPassword({ userId: resetPwdUserId, newPassword: values.new_password }, {
-            onSuccess: () => { setResetPwdUserId(null); resetPwdForm.resetFields(); }
-          });
-        }}>
+        <Form form={resetPwdForm} layout="vertical" onFinish={handleResetPwdSubmit}>
           <Form.Item name="new_password" label="New Password" rules={[{ required: true, min: 8 }]}>
             <Input.Password placeholder="Min 8 chars, upper, lower, number, special" />
           </Form.Item>

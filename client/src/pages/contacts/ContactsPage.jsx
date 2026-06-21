@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Table, Button, Space, Input, Select, Tag, Form, Tabs, Popconfirm, Row, Col, Divider } from 'antd';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Table, Button, Space, Input, Select, Tag, Form, Tabs, Popconfirm, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined, UploadOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../../components/PageHeader';
@@ -60,35 +60,30 @@ function ContactsPage() {
   const { mutate: update, isPending: updating } = useUpdateContact();
   const { mutate: deactivate } = useDeactivateContact();
   const { mutate: reactivate } = useReactivateContact();
-
   const { applyServerErrors } = useFormErrors(form);
 
   useEffect(() => {
     if (editData && editingId) {
       const tags = editData.tags ? JSON.parse(editData.tags) : [];
       const product_ids = (editData.interests || []).map(i => i.product_id);
-      form.setFieldsValue({
-        ...editData,
-        tags,
-        product_ids,
-      });
+      form.setFieldsValue({ ...editData, tags, product_ids });
       setSelectedCompanyId(editData.company_id || null);
     }
   }, [editData, editingId, form]);
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     setEditingId(null);
     setSelectedCompanyId(null);
     form.resetFields();
     setModalOpen(true);
-  };
+  }, [form]);
 
-  const handleEdit = (record) => {
+  const handleEdit = useCallback((record) => {
     setEditingId(record.contact_id);
     setModalOpen(true);
-  };
+  }, []);
 
-  const handleSubmit = (values) => {
+  const handleSubmit = useCallback((values) => {
     if (editingId) {
       update({ id: editingId, data: values }, {
         onSuccess: () => { setModalOpen(false); setEditingId(null); setSelectedCompanyId(null); },
@@ -110,18 +105,24 @@ function ContactsPage() {
         }
       });
     }
-  };
+  }, [editingId, update, create, applyServerErrors]);
 
-  const handleImportSuccess = () => {
+  const handleImportSuccess = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
-  };
+  }, [queryClient]);
 
-  const handleCompanyChange = (companyId) => {
+  const handleCompanyChange = useCallback((companyId) => {
     setSelectedCompanyId(companyId || null);
-    form.setFieldValue('branch_id', null); // Reset branch when company changes
-  };
+    form.setFieldValue('branch_id', null);
+  }, [form]);
 
-  const allColumns = [
+  const handleSearch = useCallback((v) => { setSearch(v); setPage(1); }, []);
+  const handleTypeFilter = useCallback((v) => { setFilterType(v || ''); setPage(1); }, []);
+  const handleLangFilter = useCallback((v) => { setFilterLang(v || ''); setPage(1); }, []);
+  const handleProductFilter = useCallback((v) => { setFilterProduct(v || ''); setPage(1); }, []);
+  const handleStatusFilter = useCallback((v) => { setFilterStatus(v || ''); setPage(1); }, []);
+
+  const allColumns = useMemo(() => [
     { title: 'Name', key: 'name', width: 180, render: (_, r) => `${r.first_name} ${r.last_name || ''}`.trim() },
     { title: 'Mobile', dataIndex: 'mobile', key: 'mobile', width: 130 },
     { title: 'Email', dataIndex: 'email', key: 'email', width: 180 },
@@ -167,11 +168,11 @@ function ContactsPage() {
         </Space>
       ),
     },
-  ];
+  ], [handleEdit, deactivate, reactivate]);
 
   const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
 
-  const formTabs = [
+  const formTabs = useMemo(() => [
     {
       key: 'basic',
       label: 'Contact Details',
@@ -196,7 +197,7 @@ function ContactsPage() {
                 validator(_, value) {
                   if (!value) return Promise.resolve();
                   const mobile = getFieldValue('mobile');
-                  if (mobile && value.replace(/\s/g,'') === mobile.replace(/\s/g,'')) {
+                  if (mobile && value.replace(/\s/g, '') === mobile.replace(/\s/g, '')) {
                     return Promise.reject(new Error('Must be different from primary mobile'));
                   }
                   return Promise.resolve();
@@ -270,7 +271,7 @@ function ContactsPage() {
         </Row>
       ),
     },
-  ];
+  ], [companyOptions, productOptions, branchOptions, selectedCompanyId, handleCompanyChange]);
 
   return (
     <div>
@@ -296,23 +297,23 @@ function ContactsPage() {
       <Space style={{ marginBottom: 16 }} wrap>
         <Input.Search
           placeholder="Search by name, mobile, or email..."
-          allowClear onSearch={(v) => { setSearch(v); setPage(1); }}
+          allowClear onSearch={handleSearch}
           style={{ width: 280 }} prefix={<SearchOutlined />}
         />
         <Select placeholder="Contact Type" allowClear style={{ width: 170 }}
-          value={filterType || undefined} onChange={(v) => { setFilterType(v || ''); setPage(1); }}
+          value={filterType || undefined} onChange={handleTypeFilter}
           options={CONTACT_TYPES}
         />
         <Select placeholder="Language" allowClear style={{ width: 130 }}
-          value={filterLang || undefined} onChange={(v) => { setFilterLang(v || ''); setPage(1); }}
+          value={filterLang || undefined} onChange={handleLangFilter}
           options={LANGUAGES}
         />
         <Select placeholder="Product Interest" allowClear showSearch optionFilterProp="label" style={{ width: 200 }}
-          value={filterProduct || undefined} onChange={(v) => { setFilterProduct(v || ''); setPage(1); }}
+          value={filterProduct || undefined} onChange={handleProductFilter}
           options={productOptions || []}
         />
         <Select placeholder="Status" allowClear style={{ width: 120 }}
-          value={filterStatus || undefined} onChange={(v) => { setFilterStatus(v || ''); setPage(1); }}
+          value={filterStatus || undefined} onChange={handleStatusFilter}
           options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'INACTIVE', label: 'Inactive' }]}
         />
         <ColumnSelector columns={allColumns} hiddenKeys={hiddenKeys} onToggle={toggleColumn} />
