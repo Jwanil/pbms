@@ -17,13 +17,13 @@ const getStats = async () => {
     recentProducts,
     topCompaniesRaw
   ] = await prisma.$transaction([
-    prisma.product.count({ where: { status: 'ACTIVE' } }),
-    prisma.company.count({ where: { status: 'ACTIVE' } }),
-    prisma.contact.count({ where: { status: 'ACTIVE' } }),
-    prisma.companyProductMapping.count({ where: { is_active: true } }),
+    prisma.product.count({ where: { status_flag: 0 } }),
+    prisma.company.count({ where: { status_flag: 0 } }),
+    prisma.contact.count({ where: { status_flag: 0 } }),
+    prisma.companyProductMapping.count({ where: { status_flag: 0 } }),
     prisma.company.groupBy({
       by: ['company_type'],
-      where: { status: 'ACTIVE' },
+      where: { status_flag: 0 },
       _count: { company_id: true },
     }),
     prisma.product.findMany({
@@ -31,7 +31,7 @@ const getStats = async () => {
       select: { created_at: true }
     }),
     prisma.company.findMany({
-      where: { status: 'ACTIVE' },
+      where: { status_flag: 0 },
       select: { company_name: true, _count: { select: { branches: true } } },
       orderBy: { branches: { _count: 'desc' } },
       take: 5

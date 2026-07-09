@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Table, Button, Space, Input, Select, Form, Tabs, InputNumber, Modal, Row, Col, Divider, Tag } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined, UploadOutlined, WarningFilled } from '@ant-design/icons';
+import './ProductsPage.css';
+import { Table, Button, Space, Input, Select, Form, Tabs, InputNumber, Modal, Row, Col, Divider, Tag, Popconfirm, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined, UploadOutlined, WarningFilled, DeleteOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
@@ -12,19 +13,21 @@ import ExportCsvButton from '../../components/ExportCsvButton';
 import BulkImportModal from '../../components/BulkImportModal';
 import {
   useProducts, useProduct, useProductFormData,
-  useCreateProduct, useUpdateProduct,
+  useCreateProduct, useUpdateProduct, useDeleteProduct,
   useDeactivateProduct, useReactivateProduct
 } from '../../api/productsApi';
 import { useUploadDocument } from '../../api/documentsApi';
 import useFormErrors from '../../hooks/useFormErrors';
 import useColumnVisibility from '../../hooks/useColumnVisibility';
 import { message } from 'antd';
+import useDebounce  from '../../hooks/useDebounce';
 
 function ProductsPage() {
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500); 
   const [filterCategory, setFilterCategory] = useState('');
   const [filterGrade, setFilterGrade] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -34,15 +37,19 @@ function ProductsPage() {
   const [viewId, setViewId] = useState(null);
   const [uploadFiles, setUploadFiles] = useState([]);
   // Controlled deactivate modals (antd v5 recommended pattern)
-  const [deactivateTarget, setDeactivateTarget] = useState(null);   // record to confirm-deactivate
-  const [mappingBlockTarget, setMappingBlockTarget] = useState(null); // record blocked due to mappings
+  // const [deactivateTarget, setDeactivateTarget] = useState(null);   // record to confirm-deactivate
+  const [deleteTarget, setDeleteTarget] = useState(null);         // record to confirm-delete
+  // const [mappingBlockTarget, setMappingBlockTarget] = useState(null); // record blocked due to mappings
 
-  const { data: listData, isLoading } = useProducts({ page, search, category_id: filterCategory, grade_id: filterGrade, status: filterStatus });
+  const { data: listData, isLoading } = useProducts({ page, search: debouncedSearch, category_id: filterCategory, grade_id: filterGrade, status: filterStatus });
   const { data: editData } = useProduct(editingId);
   const { data: formData } = useProductFormData();
   const { mutate: create, isPending: creating } = useCreateProduct();
   const { mutate: update, isPending: updating } = useUpdateProduct();
-  const { mutate: deactivate, isPending: deactivating } = useDeactivateProduct();
+  // const { mutate: deactivate, isPending: deactivating } = useDeactivateProduct();
+  // const { mutate: reactivate } = useReactivateProduct();
+  const { mutate: deleteProduct } = useDeleteProduct();
+  const { mutate: deactivate } = useDeactivateProduct();
   const { mutate: reactivate } = useReactivateProduct();
   const { mutateAsync: uploadDoc } = useUploadDocument();
   const { applyServerErrors } = useFormErrors(form);
@@ -56,6 +63,7 @@ function ProductsPage() {
   const handleAdd = useCallback(() => {
     setEditingId(null);
     form.resetFields();
+    form.setFieldsValue({ status_flag: 0 }); // Default to Active
     setUploadFiles([]);
     setModalOpen(true);
   }, [form]);
@@ -65,22 +73,35 @@ function ProductsPage() {
     setModalOpen(true);
   }, []);
 
-  const handleDeactivateClick = useCallback((record) => {
-    const activeMappings = record._count?.mappings ?? 0;
-    if (activeMappings > 0) {
-      setMappingBlockTarget(record);
-    } else {
-      setDeactivateTarget(record);
-    }
-  }, []);
+  // const handleDeactivateClick = useCallback((record) => {
+  //   const activeMappings = record._count?.mappings ?? 0;
+  //   if (activeMappings > 0) {
+  //     setMappingBlockTarget(record);
+  //   } else {
+  //     setDeactivateTarget(record);
+  //   }
+  // }, []);
 
-  const handleDeactivateConfirm = useCallback(() => {
-    if (!deactivateTarget) return;
-    deactivate(deactivateTarget.product_id, {
-      onSuccess: () => setDeactivateTarget(null),
-      onError: () => setDeactivateTarget(null),
-    });
-  }, [deactivate, deactivateTarget]);
+  // const handleDeactivateConfirm = useCallback(() => {
+  //   if (!deactivateTarget) return;
+  //   deactivate(deactivateTarget.product_id, {
+  //     onSuccess: () => setDeactivateTarget(null),
+  //     onError: () => setDeactivateTarget(null),
+  //   });
+  // }, [deactivate, deactivateTarget]);
+
+
+  const handleDelete = useCallback((record)=>{
+
+    if(!deleteTarget) return;
+    deleteProduct(deleteTarget.product_id,
+      {
+        onSuccess:()=>setDeleteTarget(null),
+        onError:()=>setDeleteTarget(null),
+      }
+    );
+    
+  },[deleteProduct,deleteTarget])
 
   const handleSubmit = useCallback((values) => {
     if (editingId) {
@@ -88,9 +109,7 @@ function ProductsPage() {
         onSuccess: () => { setModalOpen(false); setEditingId(null); },
         onError: (err) => {
           applyServerErrors(err);
-          if (!err?.response?.data?.errors?.length) {
-            message.error(err?.response?.data?.message || 'Failed to update product');
-          }
+          
         },
       });
     } else {
@@ -111,9 +130,7 @@ function ProductsPage() {
         },
         onError: (err) => {
           applyServerErrors(err);
-          if (!err?.response?.data?.errors?.length) {
-            message.error(err?.response?.data?.message || 'Failed to create product');
-          }
+          
         },
       });
     }
@@ -148,32 +165,73 @@ function ProductsPage() {
     { title: 'Category', key: 'category', width: 130, render: (_, r) => r.category?.category_name || '—' },
     { title: 'Grade', key: 'grade', width: 100, render: (_, r) => r.grade?.grade_name || '—' },
     { title: 'UOM', dataIndex: 'unit_of_measure', key: 'uom', width: 70 },
-    { title: 'Status', key: 'status', width: 100, render: (_, r) => <StatusBadge status={r.status} /> },
+
     {
-      title: 'Actions', key: 'actions', width: 220,
+      title: 'Status', key: 'status', width: 130,
+      render: (_, record) => {
+        const isActive = record.status_flag === 0;
+        const isInactive = record.status_flag === 2;
+        const actionLabel = isActive ? 'Deactivate' : isInactive ? 'Reactivate' : null;
+
+        // If status is "deleted" (1), just show badge, no click
+        if (!actionLabel) return <StatusBadge status={record.status_flag} />;
+
+        return (
+          <PermissionGuard module="products" action="can_edit">
+            <Popconfirm
+              title={`${actionLabel} this product?`}
+              description={
+                isActive && record._count?.mappings > 0
+                  ? `⚠️ This product has ${record._count.mappings} active mapping(s).`
+                  : `Product will be set to ${isActive ? 'INACTIVE' : 'ACTIVE'}.`
+              }
+              onConfirm={() =>
+                isActive
+                  ? deactivate(record.product_id, { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }) })
+                  : reactivate(record.product_id, { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }) })
+              }
+              okText={actionLabel}
+              okType={isActive ? 'danger' : 'primary'}
+              cancelText="Cancel"
+            >
+              <span style={{ cursor: 'pointer' }}>
+                <StatusBadge status={record.status_flag} />
+              </span>
+            </Popconfirm>
+          </PermissionGuard>
+        );
+      }
+    },
+
+    { title: 'Actions', key: 'actions', width: 220,
       render: (_, record) => (
         <Space>
           <PermissionGuard module="products" action="can_view">
             <Button size="small" icon={<EyeOutlined />} onClick={() => setViewId(record.product_id)}>View</Button>
           </PermissionGuard>
-          <PermissionGuard module="products" action="can_edit">
+          <PermissionGuard module="products" action="can_edit"> 
             <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Edit</Button>
           </PermissionGuard>
-          <PermissionGuard module="products" action="can_delete">
-            {record.status === 'ACTIVE' ? (
-              <Button size="small" danger icon={<StopOutlined />} onClick={() => handleDeactivateClick(record)}>
+          {/* <PermissionGuard module="products" action="can_delete">
+          {record.status_flag === 0 ? (
+              <Button size="small" icon={<StopOutlined />} onClick={() => handleDeactivateClick(record)}>
                 Deactivate
               </Button>
-            ) : (
+            ) : record.status_flag === 2 ? (
               <Button size="small" icon={<CheckCircleOutlined />} onClick={() => reactivate(record.product_id)}>
                 Reactivate
               </Button>
-            )}
-          </PermissionGuard>
+            ) : null}
+          </PermissionGuard> */}
+          <PermissionGuard module="products" action="can_delete"> 
+            <Button size="small" danger icon={<DeleteOutlined />} onClick={() => setDeleteTarget(record)}>
+              Delete
+            </Button>
+          </PermissionGuard> 
         </Space>
       ),
     },
-  ], [handleEdit, handleDeactivateClick, reactivate]);
+  ], [handleEdit, deactivate, reactivate, queryClient]);
 
   const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
 
@@ -189,7 +247,7 @@ function ProductsPage() {
       />
       <Select placeholder="Status" allowClear style={{ width: 120 }}
         value={filterStatus || undefined} onChange={handleStatusFilter}
-        options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'INACTIVE', label: 'Inactive' }]}
+        options={[{ value: 0, label: 'Active' }, { value: 2, label: 'Inactive' }]}
       />
     </Space>
   ), [filterCategory, filterGrade, filterStatus, categoryOptions, gradeOptions, handleCategoryFilter, handleGradeFilter, handleStatusFilter]);
@@ -213,6 +271,15 @@ function ProductsPage() {
             { pattern: /^[a-zA-Z0-9\-_\/\.]+$/, message: 'SKU can only contain letters, numbers, and -_/.' },
           ]}>
             <Input />
+          </Form.Item>
+          <Form.Item name="status_flag" label="Status" rules={[
+            { required: true}]}>
+            <Select
+              options={[
+                { value: 0, label: 'Active' },
+                { value: 2, label: 'Inactive' },
+              ]}
+            />
           </Form.Item>
           <Form.Item name="composition" label="Composition"><Input /></Form.Item>
           <Form.Item name="cas_number" label="CAS Number" rules={[{ pattern: /^\d{2,7}-\d{2}-\d{1}$/, message: 'Format: XXXXXXX-XX-X (e.g. 67-64-1)' }]}>
@@ -270,7 +337,7 @@ function ProductsPage() {
               <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>
             </PermissionGuard>
             <PermissionGuard module="products" action="can_create">
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} className="btn-primary-dark">
                 Add Product
               </Button>
             </PermissionGuard>
@@ -278,18 +345,19 @@ function ProductsPage() {
         }
       />
 
-      <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }} wrap>
+      <div className="products-toolbar">
         <Input.Search
           placeholder="Search by name, SKU, CAS, or mapped company..."
           allowClear
+          onChange={(e) => handleSearch(e.target.value)}
           onSearch={handleSearch}
-          style={{ width: 350 }}
+          className="products-toolbar__search"
         />
-        <Space>
+        <div className="products-toolbar__filters">
           {filterBar}
           <ColumnSelector columns={allColumns} hiddenKeys={hiddenKeys} onToggle={toggleColumn} />
-        </Space>
-      </Space>
+        </div>
+      </div>
 
       <Table
         columns={visibleColumns}
@@ -307,48 +375,19 @@ function ProductsPage() {
         size="middle"
       />
 
-      {/* ── Controlled: Mapping-block warning ── */}
+      {/* ── Controlled: Delete confirm ── */}
       <Modal
-        open={!!mappingBlockTarget}
-        title={
-          <span>
-            <WarningFilled style={{ color: '#faad14', marginRight: 8 }} />
-            Cannot Deactivate — Active Mappings Exist
-          </span>
-        }
-        onOk={() => setMappingBlockTarget(null)}
-        onCancel={() => setMappingBlockTarget(null)}
-        cancelButtonProps={{ style: { display: 'none' } }}
-        okText="Understood"
-      >
-        {mappingBlockTarget && (
-          <div>
-            <p>
-              <strong>{mappingBlockTarget.product_name}</strong> is currently mapped to{' '}
-              <strong>{mappingBlockTarget._count?.mappings} active company mapping{mappingBlockTarget._count?.mappings !== 1 ? 's' : ''}</strong>.
-            </p>
-            <p style={{ color: '#8c8c8c', marginTop: 8 }}>
-              You must deactivate or remove all mappings before deactivating this product.
-              Go to the <strong>Mapping</strong> page to manage them.
-            </p>
-          </div>
-        )}
-      </Modal>
-
-      {/* ── Controlled: Deactivate confirm ── */}
-      <Modal
-        open={!!deactivateTarget}
-        title="Deactivate this product?"
-        onOk={handleDeactivateConfirm}
-        onCancel={() => setDeactivateTarget(null)}
-        okText="Deactivate"
+        open={!!deleteTarget}
+        title="Permanently delete this product?"
+        onOk={() => handleDelete(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+        okText="Delete"
         okType="danger"
-        confirmLoading={deactivating}
       >
-        {deactivateTarget && (
+        {deleteTarget && (
           <p>
-            <strong>"{deactivateTarget.product_name}"</strong> will be set to INACTIVE.
-            It will no longer appear in active lists.
+            <strong>"{deleteTarget.product_name}"</strong> will be permanently removed.
+            This action cannot be undone.
           </p>
         )}
       </Modal>

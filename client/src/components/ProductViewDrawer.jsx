@@ -1,5 +1,6 @@
 import React from 'react';
 import { Tabs, Tag, Table, Divider, Typography, Row, Col, Card } from 'antd';
+import './styles/ViewDrawerShared.css';
 import {
   InfoCircleOutlined, ShopOutlined, BarcodeOutlined, AppstoreOutlined, FileOutlined
 } from '@ant-design/icons';
@@ -13,28 +14,21 @@ import useAuthStore from '../store/authStore';
 const { Text, Title } = Typography;
 
 const SectionTitle = ({ icon, title }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, marginTop: 8, paddingBottom: 8, borderBottom: '1px solid #f0f0f0' }}>
-    <span style={{ color: '#1F3A6E', fontSize: 18 }}>{icon}</span>
-    <Title level={5} style={{ margin: 0, color: '#1F3A6E', fontWeight: 600 }}>{title}</Title>
+  <div className="drawer-section-heading drawer-section-heading--lg">
+    <span className="drawer-section-heading__icon">{icon}</span>
+    <Title level={5} className="drawer-section-heading__title">{title}</Title>
   </div>
 );
 
 const InfoGrid = ({ items }) => (
-  <Row gutter={[24, 24]} style={{ marginBottom: 16 }}>
+  <Row gutter={[24, 24]} className="drawer-fields-row">
     {items.filter(Boolean).map(({ label, value, span = 8 }) => (
       <Col span={span} key={label}>
-        <div style={{
-          background: '#fff',
-          border: '1px solid #f0f0f0',
-          borderRadius: 8,
-          padding: '16px',
-          height: '100%',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-        }}>
-          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 500 }}>
+        <div className="drawer-field drawer-field--lg">
+          <Text type="secondary" className="drawer-field__label">
             {label}
           </Text>
-          <Text strong style={{ fontSize: 15, color: '#1a1a2e', wordBreak: 'break-word', display: 'block' }}>
+          <Text strong className="drawer-field__value">
             {value || <Text type="secondary">—</Text>}
           </Text>
         </div>
@@ -53,17 +47,17 @@ const ProductViewDrawer = ({ productId, open, onClose }) => {
     {
       title: 'Company Name',
       dataIndex: ['company', 'company_name'],
-      render: (name) => <Text strong style={{ fontSize: 14 }}>{name}</Text>,
+      render: (name) => <Text strong className="drawer-field__value">{name}</Text>,
     },
     {
       title: 'Type',
       dataIndex: ['company', 'company_type'],
-      render: (type) => <Tag color="blue" style={{ borderRadius: 4, padding: '2px 8px', fontSize: 13 }}>{type}</Tag>,
+      render: (type) => <Tag color="blue" className="drawer-tag--sm">{type}</Tag>,
     },
     {
       title: 'Role',
       dataIndex: 'role_type',
-      render: (role) => <Tag color="purple" style={{ borderRadius: 4, padding: '2px 8px', fontSize: 13 }}>{role}</Tag>,
+      render: (role) => <Tag color="purple" className="drawer-tag--sm">{role}</Tag>,
     },
     {
       title: 'MOQ',
@@ -86,8 +80,8 @@ const ProductViewDrawer = ({ productId, open, onClose }) => {
     },
     {
       title: 'Status',
-      dataIndex: 'is_active',
-      render: (active) => <StatusBadge status={active ? 'ACTIVE' : 'INACTIVE'} />,
+      dataIndex: 'status_flag',
+      render: (status) => <StatusBadge status={status} />,
     },
   ];
 
@@ -95,17 +89,17 @@ const ProductViewDrawer = ({ productId, open, onClose }) => {
     {
       key: 'details',
       label: (
-        <span style={{ fontSize: 15, padding: '0 8px' }}><InfoCircleOutlined style={{ marginRight: 8 }} />Product Details</span>
+        <span className="drawer-tab-label"><InfoCircleOutlined className="drawer-tab-icon" />Product Details</span>
       ),
       children: (
-        <div style={{ padding: '8px 0' }}>
+        <div className="drawer-section-content">
           <SectionTitle icon={<BarcodeOutlined />} title="Identity & Classification" />
           <InfoGrid items={[
             { label: 'Product Name', value: product.product_name, span: 12 },
             { label: 'SKU', value: product.sku, span: 12 },
             { label: 'Category', value: product.category?.category_name },
             { label: 'Grade', value: product.grade?.grade_name },
-            { label: 'Status', value: <StatusBadge status={product.status} /> },
+            { label: 'Status', value: <StatusBadge status={product.status_flag} /> },
           ]} />
 
           <SectionTitle icon={<AppstoreOutlined />} title="Technical Specifications" />
@@ -127,12 +121,12 @@ const ProductViewDrawer = ({ productId, open, onClose }) => {
     {
       key: 'companies',
       label: (
-        <span style={{ fontSize: 15, padding: '0 8px' }}><ShopOutlined style={{ marginRight: 8 }} />Mapped Companies ({(product.mappings || []).length})</span>
+        <span className="drawer-tab-label"><ShopOutlined className="drawer-tab-icon" />Mapped Companies ({(product.mappings || []).length})</span>
       ),
       children: (
-        <div style={{ padding: '8px 0' }}>
+        <div className="drawer-section-content">
           <SectionTitle icon={<ShopOutlined />} title="Company Mappings" />
-          <Card variant="borderless" styles={{ body: { padding: 0 } }} style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #f0f0f0', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <Card variant="borderless" styles={{ body: { padding: 0 } }} className="drawer-table-card--shadow">
             <Table
               dataSource={product.mappings || []}
               rowKey="mapping_id"
@@ -148,10 +142,10 @@ const ProductViewDrawer = ({ productId, open, onClose }) => {
     {
       key: 'documents',
       label: (
-        <span style={{ fontSize: 15, padding: '0 8px' }}><FileOutlined style={{ marginRight: 8 }} />Documents</span>
+        <span className="drawer-tab-label"><FileOutlined className="drawer-tab-icon" />Documents</span>
       ),
       children: (
-        <div style={{ padding: '8px 0' }}>
+        <div className="drawer-section-content">
           <SectionTitle icon={<FileOutlined />} title="Product Documents" />
           <DocumentsPanel 
             entityType="PRODUCT" 

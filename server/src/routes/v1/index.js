@@ -15,7 +15,7 @@ const contactsRouter = require('./contacts');
 const dashboardRouter = require('./dashboard');
 const documentsRouter = require('./documents');
 const locationsRouter = require('./locations');
-
+const enquiriesRouter = require('./enquiries');
 const router = Router();
 
 router.use('/health', healthRouter);
@@ -34,5 +34,6 @@ router.use('/contacts', contactsRouter);
 router.use('/dashboard', dashboardRouter);
 router.use('/documents', documentsRouter);
 router.use('/locations', locationsRouter);
+router.use('/enquiries', enquiriesRouter);
 
 module.exports = router;

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Enquiry` MODIFY `module_type` ENUM('PRODUCT', 'COMPANY', 'CONTACT', 'MAPPING', 'PERMISSION', 'ROLE', 'MASTERS') NOT NULL;

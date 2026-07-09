@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './LocationsPage.css';
 import { Table, Button, Space, Input, Select, Tag, Form, Tabs, Popconfirm } from 'antd';
 import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
@@ -10,13 +11,14 @@ import {
   useStates,    useCreateState,   useUpdateState,   useDeactivateState,   useReactivateState,
   useCities,    useCreateCity,    useUpdateCity,    useDeactivateCity,    useReactivateCity,
 } from '../../api/locationsApi';
-
+import useDebounce from "../../hooks/useDebounce";
 // ─── COUNTRIES TAB ────────────────────────────────────────────────────────────
 function CountriesTab() {
   const [form] = Form.useForm();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [includeInactive, setIncludeInactive] = useState(false);
 
   const { data: countries = [], isLoading } = useCountries({ includeInactive });
@@ -25,7 +27,7 @@ function CountriesTab() {
   const { mutate: deactivate } = useDeactivateCountry();
   const { mutate: reactivate } = useReactivateCountry();
 
-  const filtered = countries.filter(c => c.country_name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = countries.filter(c => c.country_name.toLowerCase().includes(debouncedSearch.toLowerCase()));
 
   const handleAdd = () => { setEditingId(null); form.resetFields(); setModalOpen(true); };
   const handleEdit = (r) => { setEditingId(r.country_id); form.setFieldsValue(r); setModalOpen(true); };
@@ -66,21 +68,21 @@ function CountriesTab() {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }} wrap>
-        <Input.Search placeholder="Search countries..." allowClear onSearch={setSearch} onChange={e => !e.target.value && setSearch('')} style={{ width: 280 }} />
-        <Space>
-          <Select value={includeInactive} onChange={setIncludeInactive} style={{ width: 160 }}
+      <div className="locations-toolbar">
+        <Input.Search placeholder="Search countries..." allowClear onChange={e => setSearch(e.target.value)} className="locations-search" />
+        <div className="locations-toolbar__left">
+          <Select value={includeInactive} onChange={setIncludeInactive} className="locations-filter-active"
             options={[{ value: false, label: 'Active only' }, { value: true, label: 'Include inactive' }]} />
           <PermissionGuard module="locations_countries" action="can_create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>Add Country</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} className="btn-primary-dark">Add Country</Button>
           </PermissionGuard>
-        </Space>
-      </Space>
+        </div>
+      </div>
       <Table columns={columns} dataSource={filtered} rowKey="country_id" loading={isLoading} size="middle" pagination={{ pageSize: 20 }} />
       <FormModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingId(null); }} onSubmit={handleSubmit}
         title={editingId ? 'Edit Country' : 'Add Country'} loading={creating || updating} form={form}>
         <Form.Item name="country_name" label="Country Name" rules={[{ required: true }]}><Input /></Form.Item>
-        <Form.Item name="country_code" label="Country Code (ISO 3)" extra="e.g. IND, USA, GBR"><Input maxLength={3} style={{ textTransform: 'uppercase' }} /></Form.Item>
+        <Form.Item name="country_code" label="Country Code (ISO 3)" extra="e.g. IND, USA, GBR"><Input maxLength={3} className="locations-country-code-input" /></Form.Item>
       </FormModal>
     </div>
   );
@@ -93,6 +95,7 @@ function StatesTab() {
   const [editingId, setEditingId] = useState(null);
   const [filterCountryId, setFilterCountryId] = useState(undefined);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [includeInactive, setIncludeInactive] = useState(false);
 
   const { data: countries = [] } = useCountries({ includeInactive: true });
@@ -102,7 +105,7 @@ function StatesTab() {
   const { mutate: deactivate } = useDeactivateState();
   const { mutate: reactivate } = useReactivateState();
 
-  const filtered = states.filter(s => s.state_name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = states.filter(s => s.state_name.toLowerCase().includes(debouncedSearch.toLowerCase()));
 
   const handleAdd = () => { setEditingId(null); form.resetFields(); setModalOpen(true); };
   const handleEdit = (r) => { setEditingId(r.state_id); form.setFieldsValue({ state_name: r.state_name, country_id: r.country?.country_id }); setModalOpen(true); };
@@ -143,19 +146,19 @@ function StatesTab() {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }} wrap>
-        <Input.Search placeholder="Search states..." allowClear onSearch={setSearch} onChange={e => !e.target.value && setSearch('')} style={{ width: 280 }} />
-        <Space>
-          <Select allowClear placeholder="Filter by Country" style={{ width: 200 }}
+      <div className="locations-toolbar">
+        <Input.Search placeholder="Search states..." allowClear onChange={e => setSearch(e.target.value)} className="locations-search" />
+        <div className="locations-toolbar__left">
+          <Select allowClear placeholder="Filter by Country" className="locations-filter-country"
             value={filterCountryId} onChange={v => setFilterCountryId(v)}
             options={countries.map(c => ({ value: c.country_id, label: c.country_name }))} />
-          <Select value={includeInactive} onChange={setIncludeInactive} style={{ width: 160 }}
+          <Select value={includeInactive} onChange={setIncludeInactive} className="locations-filter-active"
             options={[{ value: false, label: 'Active only' }, { value: true, label: 'Include inactive' }]} />
           <PermissionGuard module="locations_states" action="can_create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>Add State</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} className="btn-primary-dark">Add State</Button>
           </PermissionGuard>
-        </Space>
-      </Space>
+        </div>
+      </div>
       <Table columns={columns} dataSource={filtered} rowKey="state_id" loading={isLoading} size="middle" pagination={{ pageSize: 20 }} />
       <FormModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingId(null); }} onSubmit={handleSubmit}
         title={editingId ? 'Edit State' : 'Add State'} loading={creating || updating} form={form}>
@@ -177,6 +180,7 @@ function CitiesTab() {
   const [filterCountryId, setFilterCountryId] = useState(undefined);
   const [filterStateId, setFilterStateId] = useState(undefined);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [includeInactive, setIncludeInactive] = useState(false);
 
   const { data: countries = [] } = useCountries({ includeInactive: true });
@@ -188,7 +192,7 @@ function CitiesTab() {
   const { mutate: deactivate } = useDeactivateCity();
   const { mutate: reactivate } = useReactivateCity();
 
-  const filtered = cities.filter(c => c.city_name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = cities.filter(c => c.city_name.toLowerCase().includes(debouncedSearch.toLowerCase()));
 
   const handleAdd = () => { setEditingId(null); form.resetFields(); setModalOpen(true); };
   const handleEdit = (r) => { setEditingId(r.city_id); form.setFieldsValue({ city_name: r.city_name, state_id: r.state?.state_id }); setModalOpen(true); };
@@ -229,22 +233,22 @@ function CitiesTab() {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }} wrap>
-        <Input.Search placeholder="Search cities..." allowClear onSearch={setSearch} onChange={e => !e.target.value && setSearch('')} style={{ width: 280 }} />
-        <Space wrap>
-          <Select allowClear placeholder="Filter by Country" style={{ width: 180 }}
+      <div className="locations-toolbar">
+        <Input.Search placeholder="Search cities..." allowClear onChange={e => setSearch(e.target.value)} className="locations-search" />
+        <div className="locations-toolbar__left">
+          <Select allowClear placeholder="Filter by Country" className="locations-filter-country-sm"
             value={filterCountryId} onChange={v => { setFilterCountryId(v); setFilterStateId(undefined); }}
             options={countries.map(c => ({ value: c.country_id, label: c.country_name }))} />
-          <Select allowClear placeholder="Filter by State" style={{ width: 180 }}
+          <Select allowClear placeholder="Filter by State" className="locations-filter-state"
             value={filterStateId} onChange={v => setFilterStateId(v)} disabled={!filterCountryId}
             options={allStates.map(s => ({ value: s.state_id, label: s.state_name }))} />
-          <Select value={includeInactive} onChange={setIncludeInactive} style={{ width: 160 }}
+          <Select value={includeInactive} onChange={setIncludeInactive} className="locations-filter-active"
             options={[{ value: false, label: 'Active only' }, { value: true, label: 'Include inactive' }]} />
           <PermissionGuard module="locations_cities" action="can_create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>Add City</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} className="btn-primary-dark">Add City</Button>
           </PermissionGuard>
-        </Space>
-      </Space>
+        </div>
+      </div>
       <Table columns={columns} dataSource={filtered} rowKey="city_id" loading={isLoading} size="middle" pagination={{ pageSize: 20 }} />
       <FormModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingId(null); }} onSubmit={handleSubmit}
         title={editingId ? 'Edit City' : 'Add City'} loading={creating || updating} form={form}>
@@ -263,17 +267,17 @@ export default function LocationsPage() {
   const tabs = [
     {
       key: 'countries',
-      label: <span><EnvironmentOutlined style={{ marginRight: 6 }} />Countries</span>,
+      label: <span><EnvironmentOutlined className="locations-tab-icon" />Countries</span>,
       children: <CountriesTab />,
     },
     {
       key: 'states',
-      label: <span><EnvironmentOutlined style={{ marginRight: 6 }} />States</span>,
+      label: <span><EnvironmentOutlined className="locations-tab-icon" />States</span>,
       children: <StatesTab />,
     },
     {
       key: 'cities',
-      label: <span><EnvironmentOutlined style={{ marginRight: 6 }} />Cities</span>,
+      label: <span><EnvironmentOutlined className="locations-tab-icon" />Cities</span>,
       children: <CitiesTab />,
     },
   ];

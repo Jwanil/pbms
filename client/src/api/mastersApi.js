@@ -22,9 +22,6 @@ const createMasterHooks = (endpoint, queryKey, idField, nameField) => {
         message.success(`${queryKey.slice(0, -1)} created successfully`);
         queryClient.invalidateQueries({ queryKey: [queryKey] });
       },
-      onError: (err) => {
-        message.error(err?.response?.data?.message || `Failed to create ${queryKey.slice(0, -1)}`);
-      },
     });
   };
 
@@ -36,9 +33,6 @@ const createMasterHooks = (endpoint, queryKey, idField, nameField) => {
         message.success(`${queryKey.slice(0, -1)} updated successfully`);
         queryClient.invalidateQueries({ queryKey: [queryKey] });
       },
-      onError: (err) => {
-        message.error(err?.response?.data?.message || `Failed to update ${queryKey.slice(0, -1)}`);
-      },
     });
   };
 
@@ -49,9 +43,6 @@ const createMasterHooks = (endpoint, queryKey, idField, nameField) => {
       onSuccess: () => {
         message.success(`${queryKey.slice(0, -1)} deleted successfully`);
         queryClient.invalidateQueries({ queryKey: [queryKey] });
-      },
-      onError: (err) => {
-        message.error(err?.response?.data?.message || `Failed to delete — record may be in use`);
       },
     });
   };

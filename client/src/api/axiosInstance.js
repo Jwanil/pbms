@@ -32,7 +32,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
       try {
-        await axios.post('/api/v1/auth/refresh', {}, { withCredentials: true });
+        const response = await axios.post('/api/v1/auth/refresh', {}, { withCredentials: true });
+        const newToken = response.data.data.token;
+        useAuthStore.getState().setToken(newToken);
         return api(originalRequest);
       } catch (refreshError) {
         useAuthStore.getState().clearAuth();

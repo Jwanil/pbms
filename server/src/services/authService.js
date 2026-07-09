@@ -1,13 +1,23 @@
+/*
+*Auth Service
+*Handles all authentication operation for the user
+*Includes Login, Logout, Access and Refresh Token Generation and Verification
+*Called by authController.js - never accessed directly by routes
+
+*/
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
+//New prisma client instance required for database operations in this service
 const prisma = new PrismaClient();
+
+
 
 const generateAccessToken = (user) => {
   return jwt.sign(
     { user_id: user.user_id, email: user.email, role_id: user.role_id },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET,//signed the request body access token with JWT secret for security purposes
     { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
   );
 };
@@ -15,7 +25,7 @@ const generateAccessToken = (user) => {
 const generateRefreshToken = (user) => {
   return jwt.sign(
     { user_id: user.user_id },
-    process.env.JWT_REFRESH_SECRET,
+    process.env.JWT_REFRESH_SECRET,//refresh token is signed with JWT refresh secret for security purposes
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
   );
 };
@@ -58,9 +68,10 @@ const login = async (email, password) => {
   });
 
   // 5. Shape permissions as { module_name: { can_view, can_create, can_edit, can_delete } }
+  //Converting above array object to a dictionary map for react to properly read
   const permissionsMap = {};
-  permissions.forEach((p) => {
-    permissionsMap[p.module_name] = {
+  permissions.forEach((p) => { 
+    permissionsMap[p.module_name] = {//p.module_name means for every module, the permission for operations is? p is the true/false value for that module which is extracted from the permission array
       can_view: p.can_view,
       can_create: p.can_create,
       can_edit: p.can_edit,

@@ -86,7 +86,7 @@
 const { Router } = require('express');
 const {
   getMappingsController, getMappingByIdController, createMappingController,
-  updateMappingController, deactivateMappingController, reactivateMappingController
+  updateMappingController, deactivateMappingController, reactivateMappingController, deleteMappingController
 } = require('../../controllers/mappingController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
@@ -133,6 +133,7 @@ router.get('/', verifyToken, roleGuard('mappings', 'can_view'), getMappingsContr
 router.get('/:id', verifyToken, roleGuard('mappings', 'can_view'), getMappingByIdController);
 router.post('/', verifyToken, roleGuard('mappings', 'can_create'), createMappingController);
 router.put('/:id', verifyToken, roleGuard('mappings', 'can_edit'), updateMappingController);
+router.delete('/:id', verifyToken, roleGuard('mappings', 'can_delete'), deleteMappingController);
 router.patch('/:id/deactivate', verifyToken, roleGuard('mappings', 'can_delete'), deactivateMappingController);
 router.patch('/:id/reactivate', verifyToken, roleGuard('mappings', 'can_edit'), reactivateMappingController);
 

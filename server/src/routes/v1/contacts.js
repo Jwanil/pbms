@@ -108,7 +108,7 @@
 const { Router } = require('express');
 const {
   getContactsController, getContactByIdController, createContactController,
-  updateContactController, deactivateContactController, reactivateContactController,
+  updateContactController, deactivateContactController, reactivateContactController, deleteContactController,
   getBranchesController, exportContactsController, sampleCsvContactsController,
   importContactsController, checkDuplicatesController, importJsonController
 } = require('../../controllers/contactController');
@@ -169,6 +169,7 @@ router.post('/import', verifyToken, roleGuard('contacts', 'can_create'), uploadC
 router.post('/check-duplicates', verifyToken, roleGuard('contacts', 'can_view'), checkDuplicatesController);
 router.post('/import-json', verifyToken, roleGuard('contacts', 'can_create'), importJsonController);
 router.put('/:id', verifyToken, roleGuard('contacts', 'can_edit'), updateContactController);
+router.delete('/:id', verifyToken, roleGuard('contacts', 'can_delete'), deleteContactController);
 router.patch('/:id/deactivate', verifyToken, roleGuard('contacts', 'can_delete'), deactivateContactController);
 router.patch('/:id/reactivate', verifyToken, roleGuard('contacts', 'can_edit'), reactivateContactController);
 

@@ -1,0 +1,132 @@
+/* ──────────────────────────────────────────────────
+   Enquiries.css  —  Shared styles for all Enquiry pages
+────────────────────────────────────────────────── */
+
+/* ── Admin page toolbar ── */
+.enquiries-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.enquiries-toolbar__search  { width: 260px; }
+.enquiries-filter-status    { width: 160px; }
+.enquiries-filter-module    { width: 160px; }
+
+/* ── "Submitted By" cell in admin table ── */
+.enquiries-user-cell__name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 18px;
+}
+
+.enquiries-user-cell__name {
+  font-weight: 500;
+}
+
+.enquiries-user-cell__role-tag {
+  margin: 0;
+  font-size: 10px;
+}
+
+.enquiries-user-cell__email {
+  font-size: 11px;
+  color: #8c8c8c;
+  line-height: 16px;
+}
+
+/* ── "Resolve" button custom colour ── */
+.btn-resolve {
+  color: #52c41a !important;
+  border-color: #52c41a !important;
+  background: transparent !important;
+}
+
+/* ── EnquiryDetailPage: page wrapper ── */
+.enquiry-detail-page {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ── Loading spinner wrapper ── */
+.enquiries-loading {
+  text-align: center;
+  margin-top: 80px;
+}
+
+/* ── Admin response block ── */
+.enquiry-response-block {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.enquiry-response-block__title {
+  color: #389e0d;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.enquiry-response-block__text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* ── Module name: capitalize ── */
+.module-name-capitalize {
+  text-transform: capitalize;
+}
+
+/* ── Description paragraph ── */
+.enquiry-description {
+  white-space: pre-wrap;
+}
+
+/* ── User email in Descriptions item ── */
+.enquiry-user-email {
+  font-size: 12px;
+}
+
+/* ── Role tag in Descriptions item ── */
+.enquiry-user-role-tag {
+  margin-top: 4px;
+}
+
+/* ── EnquiryForm page wrapper ── */
+.enquiry-form-page {
+  max-width: 640px;
+  margin: 40px auto;
+  padding: 0 24px;
+}
+
+.enquiry-form-page__title {
+  margin-bottom: 4px;
+}
+
+.enquiry-form-page__subtitle {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.enquiry-form-section {
+  margin-bottom: 20px;
+}
+
+.enquiry-form-submit-btn {
+  background: #1F3A6E !important;
+  width: 100%;
+}
+
+/* ── MyQueriesPage section header ── */
+.my-queries-header {
+  margin-bottom: 20px;
+}
+
+.my-queries-title {
+  margin: 0;
+  color: #1F3A6E;
+}

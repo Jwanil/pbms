@@ -4,19 +4,21 @@ const prisma = new PrismaClient();
 
 const getCompanies = async ({ page = 1, limit = 20, search = '', company_type, status }) => {
   const skip = (page - 1) * limit;
+  const statusFlagFilter = status !== undefined && status !== '' ? { status_flag: parseInt(status) } : { status_flag: 0 };
 
   const where = {
     AND: [
+      statusFlagFilter,
       search ? {
-        OR: [
-          { company_name: { contains: search } },
+        OR: [// OR is used to search in multiple fields (compnay_name, gst_number, email, etc.)
+          { company_name: { contains: search } },//contains: search :- finds any string with tech in it instead of exact string match.
           { gst_number: { contains: search } },
           { email: { contains: search } },
-          { mappings: { some: { product: { product_name: { contains: search } } } } }
+          { mappings: { some: { product: { product_name: { contains: search } } } } }//This is used to find companies that are mapped with the product name that is searched.
         ]
       } : {},
       company_type ? { company_type } : {},
-      status ? { status } : {},
+
     ]
   };
 
@@ -34,10 +36,10 @@ const getCompanies = async ({ page = 1, limit = 20, search = '', company_type, s
         phone: true,
         gst_number: true,
         industry_type: true,
-        status: true,
+        status_flag: true,
         created_by: true,
         created_at: true,
-        _count: { select: { branches: true, mappings: { where: { is_active: true } } } },
+        _count: { select: { branches: true, mappings: { where: { status_flag: 0 } } } },
       }
     }),
     prisma.company.count({ where })
@@ -65,7 +67,7 @@ const getCompanyById = async (id) => {
       cin_number: true,
       website: true,
       industry_type: true,
-      status: true,
+      status_flag: true,
       created_by: true,
       created_at: true,
       updated_at: true,
@@ -89,7 +91,11 @@ const getCompanyById = async (id) => {
         select: {
           mapping_id: true,
           role_type: true,
-          is_active: true,
+          moq: true,
+          price_range_min: true,
+          price_range_max: true,
+          lead_time_days: true,
+          status_flag: true,
           product: {
             select: {
               product_id: true,
@@ -104,7 +110,7 @@ const getCompanyById = async (id) => {
       }
     }
   });
-  if (!company) throw { statusCode: 404, message: 'Company not found', code: 'NOT_FOUND' };
+  if (!company || company.status_flag !== 0) throw { statusCode: 404, message: 'Company not found', code: 'NOT_FOUND' };
   return company;
 };
 
@@ -135,7 +141,7 @@ const createCompany = async (data) => {
 
     if (branches.length > 0) {
       await tx.branch.createMany({
-        data: branches.map(b => ({
+        data: branches.map(b => ({//.map used for transforming the branches array into a new object and map's it to the company_id
           company_id: company.company_id,
           branch_name: b.branch_name,
           gst_number: b.gst_number || null,
@@ -170,6 +176,7 @@ const updateCompany = async (id, data) => {
       data: {
         company_name: companyData.company_name,
         company_type: companyData.company_type,
+        status_flag: companyData.status_flag,
         address: companyData.address || null,
         city: companyData.city || null,
         state: companyData.state || null,
@@ -244,21 +251,39 @@ const updateCompany = async (id, data) => {
 };
 
 const deactivateCompany = async (id) => {
-  const company = await prisma.company.findUnique({ where: { company_id: id } });
-  if (!company) throw { statusCode: 404, message: 'Company not found', code: 'NOT_FOUND' };
-
+  const existing = await prisma.company.findUnique({ where: { company_id: id } });
+  if (!existing || existing.status_flag === 1) throw { statusCode: 404, message: 'Company not found', code: 'NOT_FOUND' };
+  if (existing.status_flag === 2) {
+    throw { statusCode: 400, message: 'Company is already deactivated', code: 'ALREADY_DEACTIVATED' };
+  }
   // Deactivate company + all its mappings in a transaction
   await prisma.$transaction([
-    prisma.company.update({ where: { company_id: id }, data: { status: 'INACTIVE' } }),
-    prisma.companyProductMapping.updateMany({ where: { company_id: id }, data: { is_active: false } }),
+    prisma.company.update({ where: { company_id: id }, data: { status_flag: 2 } }),
+    prisma.companyProductMapping.updateMany({ where: { company_id: id }, data: { status_flag: 2} }),
   ]);
 };
 
 const reactivateCompany = async (id) => {
+  const existing = await prisma.company.findUnique({ where: { company_id: id } });
+  if (!existing || existing.status_flag === 1) throw { statusCode: 404, message: 'Company not found', code: 'NOT_FOUND' };
+  if (existing.status_flag === 1) {
+    throw { statusCode: 400, message: 'Company is already active', code: 'ALREADY_ACTIVE' };
+  }
   return prisma.company.update({
     where: { company_id: id },
-    data: { status: 'ACTIVE' }
+    data: { status_flag : 0 }
   });
 };
 
-module.exports = { getCompanies, getCompanyById, createCompany, updateCompany, deactivateCompany, reactivateCompany };
+const deleteCompany = async (id) => {
+  const existing = await prisma.company.findUnique({ where: { company_id: id } });
+  if (!existing || existing.status_flag === 1) throw { statusCode: 404, message: 'Company not found', code: 'NOT_FOUND' };
+  return prisma.company.update({
+    where: { company_id: id },
+    data: { status_flag : 1}
+  });
+};
+
+
+
+module.exports = { getCompanies, getCompanyById, createCompany, updateCompany, deactivateCompany, reactivateCompany, deleteCompany };

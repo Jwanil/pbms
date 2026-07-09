@@ -1,0 +1,24 @@
+/* ─────────────────────────────────────────────
+   ContactsPage.css  —  Scoped styles for Contacts
+───────────────────────────────────────────── */
+
+/* ── Toolbar / filter bar ── */
+.contacts-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* ── Search input ── */
+.contacts-toolbar__search {
+  width: 280px;
+  max-width: 100%;
+}
+
+/* ── Filter widths ── */
+.contacts-filter-type     { width: 170px; }
+.contacts-filter-lang     { width: 130px; }
+.contacts-filter-product  { width: 200px; }
+.contacts-filter-status   { width: 120px; }

@@ -36,13 +36,14 @@ const productSchema = z.object({
     .optional()
     .nullable(),
   description: z.string().max(5000, 'Description cannot exceed 5000 characters').optional().nullable(),
+  status_flag: z.number().int().min(0).max(2).optional(), // 0=Active, 1=Deleted, 2=Inactive
 });
 
 const getProductsController = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, search = '', category_id, grade_id, status } = req.query;
+    const { page = 1, limit = 20, search = '', category_id, grade_id, status:status_flag } = req.query;
     const result = await productService.getProducts({
-      page: parseInt(page), limit: parseInt(limit), search, category_id, grade_id, status
+      page: parseInt(page), limit: parseInt(limit), search, category_id, grade_id, status: status_flag
     });
     return sendPaginated(res, result.products, { page: parseInt(page), limit: parseInt(limit), total: result.total });
   } catch (err) { next(err); }
@@ -90,10 +91,21 @@ const updateProductController = async (req, res, next) => {
   }
 };
 
+const deleteProductController = async (req, res, next) => {
+  try {
+    await productService.deleteProduct(parseInt(req.params.id));
+    //await writeAuditLog(prisma, req.user.user_id, 'products', 'DELETED', parseInt(req.params.id), null, { status: 'DELETED' }, req);
+    return sendSuccess(res, null, 'Product deleted');
+  } catch (err) {
+    if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
+    next(err);
+  }
+};
+
 const deactivateProductController = async (req, res, next) => {
   try {
     await productService.deactivateProduct(parseInt(req.params.id));
-    await writeAuditLog(prisma, req.user.user_id, 'products', 'DELETE', parseInt(req.params.id), null, { status: 'INACTIVE' }, req);
+    //await writeAuditLog(prisma, req.user.user_id, 'products', 'DEACTIVATED', parseInt(req.params.id), null, { status: 'INACTIVE' }, req);
     return sendSuccess(res, null, 'Product deactivated');
   } catch (err) {
     if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
@@ -104,7 +116,7 @@ const deactivateProductController = async (req, res, next) => {
 const reactivateProductController = async (req, res, next) => {
   try {
     await productService.reactivateProduct(parseInt(req.params.id));
-    await writeAuditLog(prisma, req.user.user_id, 'products', 'UPDATE', parseInt(req.params.id), { status: 'INACTIVE' }, { status: 'ACTIVE' }, req);
+    //await writeAuditLog(prisma, req.user.user_id, 'products', 'UPDATE', parseInt(req.params.id), { status: 'INACTIVE' }, { status: 'ACTIVE' }, req);
     return sendSuccess(res, null, 'Product reactivated');
   } catch (err) { next(err); }
 };
@@ -121,7 +133,7 @@ const Papa = require('papaparse');
 const exportProductsController = async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
-      where: { status: 'ACTIVE' },
+      where: { status: status_flag },
       select: {
         product_name: true,
         sku: true,
@@ -133,7 +145,7 @@ const exportProductsController = async (req, res, next) => {
         hsn_code: true,
         cas_number: true,
         description: true,
-        status: true,
+        status_flag: true,
         category: { select: { category_name: true } },
         grade: { select: { grade_name: true } },
         packaging: { select: { packaging_name: true } }
@@ -154,7 +166,7 @@ const exportProductsController = async (req, res, next) => {
       hsn_code: p.hsn_code,
       cas_number: p.cas_number,
       description: p.description,
-      status: p.status
+      status_flag: p.status_flag
     }));
 
     const csvString = Papa.unparse(flatProducts);
@@ -344,5 +356,5 @@ module.exports = {
   getProductsController, getProductByIdController, createProductController,
   updateProductController, deactivateProductController, reactivateProductController,
   getFormDataController, exportProductsController, sampleCsvProductsController,
-  importProductsController, checkDuplicatesController, importJsonController
+  importProductsController, checkDuplicatesController, importJsonController, deleteProductController
 };

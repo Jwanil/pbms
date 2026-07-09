@@ -64,7 +64,12 @@ const createUser = async ({ name, email, username, password, mobile, role_id, de
   });
   if (existing) {
     const field = existing.email === email ? 'email' : 'username';
-    throw { statusCode: 409, message: `A user with this ${field} already exists`, code: 'CONFLICT' };
+    throw { 
+      statusCode: 400, 
+      message: 'Validation failed', 
+      code: 'VALIDATION_ERROR',
+      errors: [{ field, message: `A user with this ${field} already exists` }]
+    };
   }
 
   const password_hash = await bcrypt.hash(password, 12);
@@ -132,7 +137,12 @@ const updateUser = async (userId, { name, email, username, mobile, role_id, depa
   });
   if (existing) {
     const field = existing.email === email ? 'email' : 'username';
-    throw { statusCode: 409, message: `A user with this ${field} already exists`, code: 'CONFLICT' };
+    throw { 
+      statusCode: 400, 
+      message: 'Validation failed', 
+      code: 'VALIDATION_ERROR',
+      errors: [{ field, message: `A user with this ${field} already exists` }]
+    };
   }
 
   return prisma.user.update({

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+
 
 const useAuthStore = create(
   persist(
@@ -10,10 +11,10 @@ const useAuthStore = create(
       permissions: {},       // { module_name: { can_view, can_create, can_edit, can_delete } }
       isAuthenticated: false,
 
-      // Actions — Phase 2 will call these
+
       setAuth: (user, token, permissions) =>
         set({ user, token, permissions, isAuthenticated: true }),
-
+      setToken: (token) => set({ token }),
       clearAuth: () =>
         set({ user: null, token: null, permissions: {}, isAuthenticated: false }),
 
@@ -25,6 +26,7 @@ const useAuthStore = create(
     }),
     {
       name: 'pbms-auth',
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         user: state.user,
         token: state.token,

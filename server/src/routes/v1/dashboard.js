@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const { getStatsController, getActivityController } = require('../../controllers/dashboardController');
 const { verifyToken } = require('../../middleware/verifyToken');
-const { roleGuard } = require('../../middleware/roleGuard');
+
 
 const router = Router();
 
@@ -22,7 +22,7 @@ const router = Router();
  *       200:
  *         description: Stats object with counts and company type breakdown
  */
-router.get('/stats', verifyToken, roleGuard('dashboard', 'can_view'), getStatsController);
+router.get('/stats', verifyToken, getStatsController);
 
 /**
  * @swagger
@@ -38,6 +38,6 @@ router.get('/stats', verifyToken, roleGuard('dashboard', 'can_view'), getStatsCo
  *       200:
  *         description: Array of recent activities
  */
-router.get('/activity', verifyToken, roleGuard('dashboard', 'can_view'), getActivityController);
+router.get('/activity', verifyToken, getActivityController);
 
 module.exports = router;

@@ -1,4 +1,5 @@
 import { Table, Input, Space } from 'antd';
+import './styles/DataTable.css';
 import { SearchOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 
@@ -23,18 +24,21 @@ function DataTable({
 
   return (
     <div>
-      <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
+      <div className="data-table-toolbar">
         <Input.Search
           placeholder={searchPlaceholder}
           allowClear
           value={searchValue}
           onSearch={handleSearch}
-          onChange={(e) => !e.target.value && handleSearch('')}
-          style={{ width: 300 }}
+          onChange={(e) => {
+            setSearchValue(e.target.value);
+            onSearch?.(e.target.value);
+          }}
+          className="data-table-search"
           prefix={<SearchOutlined />}
         />
         {extraFilters && <Space>{extraFilters}</Space>}
-      </Space>
+      </div>
 
       <Table
         columns={columns}

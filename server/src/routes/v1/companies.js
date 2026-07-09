@@ -86,7 +86,7 @@
 const { Router } = require('express');
 const {
   getCompaniesController, getCompanyByIdController, createCompanyController,
-  updateCompanyController, deactivateCompanyController, reactivateCompanyController,
+  updateCompanyController,deleteCompanyController, deactivateCompanyController, reactivateCompanyController,
   exportCompaniesController, sampleCsvCompaniesController, importCompaniesController,
   checkDuplicatesController, importJsonController
 } = require('../../controllers/companyController');
@@ -139,6 +139,10 @@ router.post('/check-duplicates', verifyToken, roleGuard('companies', 'can_view')
 router.post('/import-json', verifyToken, roleGuard('companies', 'can_create'), importJsonController);
 router.put('/:id', verifyToken, roleGuard('companies', 'can_edit'), updateCompanyController);
 router.patch('/:id/deactivate', verifyToken, roleGuard('companies', 'can_delete'), deactivateCompanyController);
+router.patch('/:id/reactivate', verifyToken, roleGuard('companies', 'can_edit'), reactivateCompanyController);
+
+router.delete('/:id', verifyToken, roleGuard('companies', 'can_delete'), deleteCompanyController);
+router.patch('/:id/deactivate', verifyToken, roleGuard('companies', 'can_edit'), deactivateCompanyController);
 router.patch('/:id/reactivate', verifyToken, roleGuard('companies', 'can_edit'), reactivateCompanyController);
 
 module.exports = router;

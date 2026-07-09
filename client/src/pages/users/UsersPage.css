@@ -1,0 +1,8 @@
+/* ──────────────────────────────────────────
+   UsersPage.css  —  Scoped styles for Users
+────────────────────────────────────────── */
+
+/* ── Status filter select ── */
+.users-filter-status {
+  width: 160px;
+}

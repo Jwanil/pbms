@@ -5,8 +5,11 @@ const prisma = new PrismaClient();
 const getProducts = async ({ page = 1, limit = 20, search = '', category_id, grade_id, status }) => {
   const skip = (page - 1) * limit;
 
+  const statusFlagFilter = status !== undefined && status !== '' ? { status_flag: parseInt(status) } : { status_flag: 0 };
+
   const where = {
     AND: [
+      statusFlagFilter,
       search ? {
         OR: [
           { product_name: { contains: search } },
@@ -17,7 +20,6 @@ const getProducts = async ({ page = 1, limit = 20, search = '', category_id, gra
       } : {},
       category_id ? { category_id: parseInt(category_id) } : {},
       grade_id ? { grade_id: parseInt(grade_id) } : {},
-      status ? { status } : {},
     ]
   };
 
@@ -33,12 +35,12 @@ const getProducts = async ({ page = 1, limit = 20, search = '', category_id, gra
         sku: true,
         cas_number: true,
         unit_of_measure: true,
-        status: true,
+        status_flag: true,
         created_at: true,
         category: { select: { category_id: true, category_name: true } },
         grade: { select: { grade_id: true, grade_name: true } },
         packaging: { select: { packaging_id: true, packaging_name: true } },
-        _count: { select: { mappings: { where: { is_active: true } } } },
+        _count: { select: { mappings: { where: { status_flag: 0 } } } },
       }
     }),
     prisma.product.count({ where })
@@ -65,7 +67,7 @@ const getProductById = async (id) => {
       hsn_code: true,
       cas_number: true,
       description: true,
-      status: true,
+      status_flag: true,
       created_by: true,
       created_at: true,
       updated_by: true,
@@ -83,7 +85,7 @@ const getProductById = async (id) => {
           price_range_min: true,
           price_range_max: true,
           lead_time_days: true,
-          is_active: true,
+          status_flag: true,
           company: {
             select: {
               company_id: true,
@@ -95,7 +97,7 @@ const getProductById = async (id) => {
       }
     }
   });
-  if (!product) throw { statusCode: 404, message: 'Product not found', code: 'NOT_FOUND' };
+  if (!product || product.status_flag !== 0) throw { statusCode: 404, message: 'Product not found', code: 'NOT_FOUND' };
   return product;
 };
 
@@ -133,7 +135,7 @@ const createProduct = async (data, userId) => {
       product_id: true,
       product_name: true,
       sku: true,
-      status: true,
+      status_flag: true,
     }
   });
 };
@@ -160,6 +162,7 @@ const updateProduct = async (id, data, userId) => {
     data: {
       product_name: data.product_name,
       sku: data.sku,
+      status_flag: data.status_flag,
       composition: data.composition || null,
       category_id: data.category_id || null,
       grade_id: data.grade_id || null,
@@ -177,24 +180,43 @@ const updateProduct = async (id, data, userId) => {
       product_id: true,
       product_name: true,
       sku: true,
-      status: true,
+      status_flag: true,
     }
   });
 };
 
 const deactivateProduct = async (id) => {
-  const product = await prisma.product.findUnique({ where: { product_id: id } });
-  if (!product) throw { statusCode: 404, message: 'Product not found', code: 'NOT_FOUND' };
+  const existing = await prisma.product.findUnique({ where: { product_id: id } });
+  if (!existing || existing.status_flag === 1) {
+    throw { statusCode: 404, message: 'Product not found', code: 'NOT_FOUND' };
+  }
+  if (existing.status_flag === 2) {
+    throw { statusCode: 400, message: 'Product is already deactivated', code: 'ALREADY_DEACTIVATED' };
+  }
   return prisma.product.update({
     where: { product_id: id },
-    data: { status: 'INACTIVE' }
+    data: { status_flag: 2 }  // 2 = deactivated
   });
 };
 
 const reactivateProduct = async (id) => {
+  const existing = await prisma.product.findUnique({ where: { product_id: id } });
+  if (!existing || existing.status_flag === 1) {
+    throw { statusCode: 404, message: 'Product not found', code: 'NOT_FOUND' };
+  }
   return prisma.product.update({
     where: { product_id: id },
-    data: { status: 'ACTIVE' }
+    data: { status_flag: 0} //1 = active
+  });
+};
+
+const deleteProduct = async (id) => {
+  const existing = await prisma.product.findUnique({ where: { product_id: id } });
+  if (!existing) { throw { statusCode: 404, message: 'Product not found', code: 'NOT_FOUND' }; }
+
+  return prisma.product.update({
+    where: { product_id: id },
+    data: { status_flag: 1 }
   });
 };
 
@@ -207,4 +229,4 @@ const getFormData = async () => {
   return { categories, grades, packaging };
 };
 
-module.exports = { getProducts, getProductById, createProduct, updateProduct, deactivateProduct, reactivateProduct, getFormData };
+module.exports = { getProducts, getProductById, createProduct, updateProduct, deactivateProduct, reactivateProduct, deleteProduct, getFormData };

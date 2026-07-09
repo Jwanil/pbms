@@ -1,0 +1,29 @@
+/* UserPermissionsModal.css */
+
+.perm-module-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.perm-module-name--requested {
+  font-weight: 600;
+  color: #d46b08;
+}
+
+.perm-request-badge { margin-right: 6px; }
+
+.perm-loading {
+  display: block;
+  margin: 40px auto;
+}
+
+.perm-save-btn { margin-bottom: 12px; }
+
+/* ── Requested permission highlight wrapper ── */
+.perm-request-highlight {
+  display: inline-block;
+  border: 2px solid #faad14;
+  border-radius: 14px;
+  padding: 1px 3px;
+}

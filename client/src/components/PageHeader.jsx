@@ -1,21 +1,22 @@
 import { Typography, Breadcrumb } from 'antd';
+import './styles/PageHeader.css';
 
 const { Title } = Typography;
 
 function PageHeader({ title, subtitle, breadcrumbs = [], extra }) {
   return (
-    <div style={{ marginBottom: 24 }}>
+    <div className="page-header">
       {breadcrumbs.length > 0 && (
         <Breadcrumb
           items={breadcrumbs.map((b) => ({ title: b }))}
-          style={{ marginBottom: 8 }}
+          className="page-header__breadcrumb"
         />
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header__row">
         <div>
-          <Title level={4} style={{ margin: 0, color: '#1F3A6E' }}>{title}</Title>
+          <Title level={4} className="page-header__title">{title}</Title>
           {subtitle && (
-            <Typography.Text type="secondary" style={{ fontSize: 13 }}>{subtitle}</Typography.Text>
+            <Typography.Text type="secondary" className="page-header__subtitle">{subtitle}</Typography.Text>
           )}
         </div>
         {extra && <div>{extra}</div>}

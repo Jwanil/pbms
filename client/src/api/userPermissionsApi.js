@@ -37,8 +37,5 @@ export const useUpdateUserPermissions = () => {
         }
       }
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to update permissions');
-    },
   });
 };

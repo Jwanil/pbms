@@ -1,0 +1,36 @@
+/* ─────────────────────────────────────────────
+   MappingPage.css  —  Scoped styles for Mapping
+───────────────────────────────────────────── */
+
+/* ── Filter bar ── */
+.mapping-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* ── Filter widths ── */
+.mapping-filter-company  { width: 220px; }
+.mapping-filter-product  { width: 220px; }
+.mapping-filter-role     { width: 150px; }
+.mapping-filter-status   { width: 120px; }
+
+/* ── InputNumber fields: full width ── */
+.mapping-input-full {
+  width: 100%;
+}
+
+/* ── Edit mode: read-only mapping info card ── */
+.mapping-edit-info {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.mapping-edit-info p {
+  margin: 0;
+  line-height: 1.8;
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './styles/AppLayout.css';
 import { Layout, Menu, Typography, Avatar, Dropdown, Space } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -6,6 +7,7 @@ import {
   SwapOutlined, ContactsOutlined, TagsOutlined,
   UserOutlined, SafetyOutlined, DownOutlined,
   MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined,
+  QuestionCircleOutlined,
 } from '@ant-design/icons';
 import useAuthStore from '../store/authStore';
 import { useLogout } from '../api/authApi';
@@ -32,6 +34,16 @@ const menuItems = [
     ],
   },
   { key: '/users', icon: <UserOutlined />, label: 'Users' },
+  {
+    key: 'enquiries',
+    icon: <QuestionCircleOutlined />,
+    label: 'Enquiries',
+    children: [
+      { key: '/enquiries/new', label: 'New Enquiry' },
+      { key: '/enquiries/mine', label: 'My Queries' },
+      { key: '/enquiries/admin', label: 'All Enquiries' },
+    ],
+  },
 ];
 
 // Map each sidebar menu key to its permission module name
@@ -47,6 +59,7 @@ const ROUTE_MODULE_MAP = {
   '/masters/departments': 'departments',
   '/masters/locations': 'locations_countries',
   '/users': 'users',
+
 };
 
 // Filter menu items based on user permissions
@@ -70,6 +83,9 @@ const filterMenuItems = (items, permissions) => {
     })
     .filter(Boolean);
 };
+
+
+
 
 function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -101,20 +117,25 @@ function AppLayout() {
     },
   ];
 
-  const visibleMenuItems = filterMenuItems(menuItems, permissions);
+  const visibleMenuItems = filterMenuItems(menuItems, permissions).map(item => {
+    if (item.key === 'enquiries') {
+      const children = item.children.filter(child => {
+        if (child.key === '/enquiries/admin' && user?.role !== 'SUPER_ADMIN') return false;
+        if (child.key === '/enquiries/new' && user?.role === 'SUPER_ADMIN') return false;
+        if (child.key === '/enquiries/mine' && user?.role === 'SUPER_ADMIN') return false;
+        return true;
+      });
+      return { ...item, children }; 
+    }
+
+    return item;
+  });
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout className="app-layout">
       <Sider collapsible collapsed={collapsed} trigger={null} width={240} theme="dark">
-        <div style={{
-          height: 64,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          padding: collapsed ? 0 : '0 24px',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-        }}>
-          <Text strong style={{ color: '#fff', fontSize: collapsed ? 18 : 16, letterSpacing: 1 }}>
+        <div className="app-sidebar-brand">
+          <Text strong className="app-sidebar-brand__text">
             {collapsed ? 'P' : 'PBMS'}
           </Text>
         </div>
@@ -126,50 +147,34 @@ function AppLayout() {
           defaultOpenKeys={['masters']}
           items={visibleMenuItems}
           onClick={handleMenuClick}
-          style={{ borderRight: 0, marginTop: 8 }}
+          className="app-sidebar-menu"
         />
       </Sider>
 
       <Layout>
-        <Header style={{
-          background: '#fff',
-          padding: '0 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: '1px solid #f0f0f0',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-        }}>
+        <Header className="app-header">
           <div
             onClick={() => setCollapsed(!collapsed)}
-            style={{ cursor: 'pointer', fontSize: 18, color: '#1F3A6E' }}
+            className="app-header__collapse-btn"
           >
             {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
           </div>
 
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']}>
-            <Space style={{ cursor: 'pointer' }}>
-              <Avatar style={{ backgroundColor: '#1F3A6E' }} icon={<UserOutlined />} />
-              <div style={{ lineHeight: 1.3 }}>
+            <Space className="app-header__user">
+              <Avatar className="app-header__avatar" icon={<UserOutlined />} />
+              <div className="app-header__user-info">
                 <Text strong>{user?.name || 'User'}</Text>
-                <Text type="secondary" style={{ fontSize: 11, display: 'block', lineHeight: 1 }}>
+                <Text type="secondary" className="app-header__user-role">
                   {user?.role || ''}
                 </Text>
               </div>
-              <DownOutlined style={{ fontSize: 11 }} />
+              <DownOutlined className="app-header__chevron" />
             </Space>
           </Dropdown>
         </Header>
 
-        <Content style={{
-          margin: '24px',
-          padding: '24px',
-          background: '#fff',
-          borderRadius: 8,
-          minHeight: 'calc(100vh - 112px)',
-        }}>
+        <Content className="app-content">
           <Outlet />
         </Content>
       </Layout>

@@ -26,9 +26,6 @@ export const useUploadDocument = () => {
       message.success('Document uploaded successfully');
       queryClient.invalidateQueries({ queryKey: ['documents', variables.get('entity_type').toLowerCase(), Number(variables.get('entity_id'))] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to upload document');
-    }
   });
 };
 
@@ -40,8 +37,5 @@ export const useDeleteDocument = (entityType, entityId) => {
       message.success('Document deleted');
       queryClient.invalidateQueries({ queryKey: ['documents', entityType, entityId] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to delete document');
-    }
   });
 };

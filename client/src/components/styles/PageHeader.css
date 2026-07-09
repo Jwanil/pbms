@@ -1,0 +1,18 @@
+/* PageHeader.css */
+
+.page-header { margin-bottom: 24px; }
+
+.page-header__breadcrumb { margin-bottom: 8px; }
+
+.page-header__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.page-header__title {
+  margin: 0;
+  color: #1F3A6E;
+}
+
+.page-header__subtitle { font-size: 13px; }

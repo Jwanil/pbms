@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-const getContacts = async ({ page = 1, limit = 20, search = '', contact_type, preferred_language, city, state, tags, product_id, status }) => {
+const getContacts = async ({ page = 1, limit = 20, search = '', contact_type, preferred_language, city, state, tags, product_id, status: status_flag }) => {
   const skip = (page - 1) * limit;
 
   const where = {
@@ -19,8 +19,8 @@ const getContacts = async ({ page = 1, limit = 20, search = '', contact_type, pr
       preferred_language ? { preferred_language } : {},
       city ? { branch: { city: { contains: city } } } : {},
       state ? { branch: { state: { contains: state } } } : {},
+      status_flag !== undefined && status_flag !== '' ? { status_flag: parseInt(status_flag) } : { status_flag: 0 },
       tags ? { tags: { contains: tags } } : {},
-      status ? { status } : {},
       product_id ? { interests: { some: { product_id: parseInt(product_id) } } } : {},
     ]
   };
@@ -41,7 +41,7 @@ const getContacts = async ({ page = 1, limit = 20, search = '', contact_type, pr
         designation: true,
         preferred_language: true,
         tags: true,
-        status: true,
+        status_flag: true,
         created_at: true,
         company: { select: { company_id: true, company_name: true } },
         branch: { select: { branch_id: true, branch_name: true, city: true, state: true } },
@@ -70,7 +70,7 @@ const getContactById = async (id) => {
       designation: true,
       preferred_language: true,
       tags: true,
-      status: true,
+      status_flag: true,
       created_at: true,
       updated_at: true,
       company: {
@@ -87,7 +87,7 @@ const getContactById = async (id) => {
       }
     }
   });
-  if (!contact) throw { statusCode: 404, message: 'Contact not found', code: 'NOT_FOUND' };
+  if (!contact || contact.status_flag !== 0) throw { statusCode: 404, message: 'Contact not found', code: 'NOT_FOUND' };
   return contact;
 };
 
@@ -113,6 +113,7 @@ const createContact = async (data) => {
         designation: contactData.designation || null,
         preferred_language: contactData.preferred_language || null,
         tags: contactData.tags || null,
+        status_flag: contactData.status_flag ?? 0,
       }
     });
 
@@ -155,7 +156,8 @@ const updateContact = async (id, data) => {
         contact_type: contactData.contact_type || null,
         designation: contactData.designation || null,
         preferred_language: contactData.preferred_language || null,
-        tags: contactData.tags || null,
+        tags: contactData.tags !== undefined ? contactData.tags : existing.tags,
+        status_flag: contactData.status_flag !== undefined ? contactData.status_flag : existing.status_flag,
       }
     });
 
@@ -177,18 +179,35 @@ const updateContact = async (id, data) => {
 };
 
 const deactivateContact = async (id) => {
-  const contact = await prisma.contact.findUnique({ where: { contact_id: id } });
-  if (!contact) throw { statusCode: 404, message: 'Contact not found', code: 'NOT_FOUND' };
+  const existing = await prisma.contact.findUnique({ where: { contact_id: id } });
+  if (!existing || existing.status_flag === 1) throw { statusCode: 404, message: 'Contact not found', code: 'NOT_FOUND' };
+  if (existing.status_flag === 2) {
+    throw { statusCode: 400, message: 'Contact is already deactivated', code: 'ALREADY_DEACTIVATED' };
+  }
   return prisma.contact.update({
     where: { contact_id: id },
-    data: { status: 'INACTIVE' }
+    data: { status_flag: 2 }
   });
 };
 
 const reactivateContact = async (id) => {
+  const existing = await prisma.contact.findUnique({ where: { contact_id: id } });
+  if (!existing || existing.status_flag === 1) throw { statusCode: 404, message: 'Contact not found', code: 'NOT_FOUND' };
+  if (existing.status_flag === 0) {
+    throw { statusCode: 400, message: 'Contact is already active', code: 'ALREADY_ACTIVE' };
+  }
   return prisma.contact.update({
     where: { contact_id: id },
-    data: { status: 'ACTIVE' }
+    data: { status_flag: 0 }
+  });
+};
+
+const deleteContact = async (id) => {
+  const existing = await prisma.contact.findUnique({ where: { contact_id: id } });
+  if (!existing || existing.status_flag === 1) throw { statusCode: 404, message: 'Contact not found', code: 'NOT_FOUND' };
+  return prisma.contact.update({
+    where: { contact_id: id },
+    data: { status_flag: 1 }
   });
 };
 
@@ -205,4 +224,8 @@ const getBranchesByCompany = async (companyId) => {
   });
 };
 
-module.exports = { getContacts, getContactById, createContact, updateContact, deactivateContact, reactivateContact, getBranchesByCompany };
+module.exports = {
+  getContacts, getContactById, createContact,
+  updateContact, deactivateContact, reactivateContact, deleteContact,
+  getBranchesByCompany
+};

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, createRoutesFromElements, Route, Navigate, RouterProvider } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import AppLayout from './components/AppLayout';
@@ -18,13 +18,15 @@ import DepartmentsPage from './pages/masters/DepartmentsPage';
 import UsersPage from './pages/users/UsersPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import LocationsPage from './pages/locations/LocationsPage';
+import EnquiryForm from './pages/enquiries/EnquiryForm';
+import MyQueriesPage from './pages/enquiries/MyQueriesPage';
+import EnquiriesAdminPage from './pages/enquiries/EnquiriesAdminPage';
+import EnquiryDetailPage from './pages/enquiries/EnquiryDetailPage';
 
-function App() {
-  // Revalidate session on every app load
-  useRevalidateSession();
-
-  return (
-    <Routes>
+// Created the router object cleanly outside the component
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
 
       <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -41,11 +43,22 @@ function App() {
         <Route path="masters/departments" element={<PermissionRoute module="departments"><DepartmentsPage /></PermissionRoute>} />
         <Route path="users" element={<PermissionRoute module="users"><UsersPage /></PermissionRoute>} />
         <Route path="masters/locations" element={<PermissionRoute module="locations_countries"><LocationsPage /></PermissionRoute>} />
+        <Route path="enquiries/new" element={<EnquiryForm />} />
+        <Route path="enquiries/mine" element={<MyQueriesPage />} />
+        <Route path="enquiries/admin" element={<EnquiriesAdminPage />} />
+        <Route path="enquiries/:id" element={<EnquiryDetailPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
-  );
+    </Route>
+  )
+);
+
+function App() {
+  // Revalidate session on every app load
+  useRevalidateSession();
+
+  return <RouterProvider router={router} />;
 }
 
 export default App;

@@ -1,0 +1,84 @@
+/* ──────────────────────────────────────────────
+   ProfilePage.css  —  Scoped styles for Profile
+────────────────────────────────────────────── */
+
+/* ── Loading spinner wrapper ── */
+.profile-loading {
+  text-align: center;
+  padding: 80px;
+}
+
+/* ── Profile header bar (avatar + name + edit button) ── */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* ── Avatar ── */
+.profile-avatar {
+  background: #1F3A6E !important;
+  font-size: 26px !important;
+  font-weight: 700 !important;
+}
+
+/* ── "Edit Profile" button pushed to the right ── */
+.profile-edit-btn {
+  margin-left: auto;
+  background: #1F3A6E !important;
+}
+
+/* ── InfoItem: label + value block ── */
+.profile-info-item {
+  margin-bottom: 20px;
+}
+
+.profile-info-item__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-info-item__value-wrap {
+  margin-top: 4px;
+}
+
+.profile-info-item__value {
+  font-size: 15px;
+}
+
+/* ── Edit modal form ── */
+.profile-modal-form {
+  margin-top: 8px;
+}
+
+.profile-modal-actions {
+  margin-bottom: 0;
+  text-align: right;
+}
+
+.profile-modal-cancel-btn {
+  margin-right: 8px;
+}
+
+/* ── Change password tab ── */
+.profile-password-tab {
+  max-width: 480px;
+}
+
+.profile-password-tab__hint {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.profile-password-divider {
+  margin: 4px 0 16px;
+}
+
+/* ── Primary buttons with brand colour ── */
+.btn-primary-dark {
+  background: #1F3A6E !important;
+}

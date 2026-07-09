@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import './ProfilePage.css';
 import { Card, Form, Input, Button, Row, Col, Typography, Space, Spin, Modal, message, Tabs, Divider, Avatar } from 'antd';
 import { UserOutlined, LockOutlined, SaveOutlined, EditOutlined, KeyOutlined } from '@ant-design/icons';
 import { useProfile, useUpdateProfile, useChangePassword } from '../../api/profileApi';
@@ -50,10 +51,10 @@ function ProfilePage() {
 
   const InfoItem = useCallback(({ label, value }) => (
     <Col xs={24} sm={12}>
-      <div style={{ marginBottom: 20 }}>
-        <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</Text>
-        <div style={{ marginTop: 4 }}>
-          <Text strong style={{ fontSize: 15 }}>{value || <Text type="secondary">—</Text>}</Text>
+      <div className="profile-info-item">
+        <Text type="secondary" className="profile-info-item__label">{label}</Text>
+        <div className="profile-info-item__value-wrap">
+          <Text strong className="profile-info-item__value">{value || <Text type="secondary">—</Text>}</Text>
         </div>
       </div>
     </Col>
@@ -61,15 +62,15 @@ function ProfilePage() {
 
   const personalInfoTab = useMemo(() => (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 28, padding: '16px 0', borderBottom: '1px solid #f0f0f0' }}>
-        <Avatar size={64} style={{ background: '#1F3A6E', fontSize: 26, fontWeight: 700 }}>
+      <div className="profile-header">
+        <Avatar size={64} className="profile-avatar">
           {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
         </Avatar>
         <div>
           <Title level={4} style={{ margin: 0 }}>{profile?.name}</Title>
           <Text type="secondary">{profile?.role?.role_name} {profile?.department?.department_name ? `· ${profile.department.department_name}` : ''}</Text>
         </div>
-        <Button type="primary" icon={<EditOutlined />} onClick={openEditModal} style={{ marginLeft: 'auto', background: '#1F3A6E' }}>
+        <Button type="primary" icon={<EditOutlined />} onClick={openEditModal} className="profile-edit-btn">
           Edit Profile
         </Button>
       </div>
@@ -84,7 +85,7 @@ function ProfilePage() {
       </Row>
 
       <Modal title="Edit Personal Information" open={isModalVisible} onCancel={closeEditModal} footer={null}>
-        <Form form={profileForm} layout="vertical" onFinish={handleUpdateProfile} style={{ marginTop: 8 }}>
+        <Form form={profileForm} layout="vertical" onFinish={handleUpdateProfile} className="profile-modal-form">
           <Form.Item name="name" label="Full Name" rules={[{ required: true, message: 'Full name is required' }]}>
             <Input />
           </Form.Item>
@@ -98,9 +99,9 @@ function ProfilePage() {
           >
             <Input />
           </Form.Item>
-          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-            <Button onClick={closeEditModal} style={{ marginRight: 8 }}>Cancel</Button>
-            <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={updatingProfile} style={{ background: '#1F3A6E' }}>
+          <Form.Item className="profile-modal-actions">
+            <Button onClick={closeEditModal} className="profile-modal-cancel-btn">Cancel</Button>
+            <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={updatingProfile} className="btn-primary-dark">
               Save Changes
             </Button>
           </Form.Item>
@@ -110,8 +111,8 @@ function ProfilePage() {
   ), [profile, isModalVisible, profileForm, openEditModal, closeEditModal, handleUpdateProfile, updatingProfile, InfoItem]);
 
   const changePasswordTab = useMemo(() => (
-    <div style={{ maxWidth: 480 }}>
-      <Text type="secondary" style={{ display: 'block', marginBottom: 24 }}>
+    <div className="profile-password-tab">
+      <Text type="secondary" className="profile-password-tab__hint">
         Keep your account secure by using a strong, unique password that you don't use elsewhere.
       </Text>
       <Form form={passwordForm} layout="vertical" onFinish={handleChangePassword}>
@@ -122,7 +123,7 @@ function ProfilePage() {
         >
           <Input.Password />
         </Form.Item>
-        <Divider style={{ margin: '4px 0 16px' }} />
+        <Divider className="profile-password-divider" />
         <Form.Item
           name="new_password"
           label="New Password"
@@ -150,7 +151,7 @@ function ProfilePage() {
           <Input.Password />
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={changingPassword} style={{ background: '#1F3A6E' }}>
+          <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={changingPassword} className="btn-primary-dark">
             Update Password
           </Button>
         </Form.Item>
@@ -183,7 +184,7 @@ function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: 'center', padding: '80px' }}>
+      <div className="profile-loading">
         <Spin size="large" />
       </div>
     );

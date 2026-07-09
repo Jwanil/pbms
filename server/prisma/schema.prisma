@@ -7,7 +7,327 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- ENUMS ---
+model Category {
+  category_id   Int       @id @default(autoincrement())
+  category_name String    @unique
+  products      Product[]
+}
+
+model Grade {
+  grade_id   Int       @id @default(autoincrement())
+  grade_name String    @unique
+  products   Product[]
+}
+
+model Packaging {
+  packaging_id   Int       @id @default(autoincrement())
+  packaging_name String    @unique
+  size_unit      String
+  size_value     Decimal   @db.Decimal(10, 2)
+  products       Product[]
+}
+
+model Department {
+  department_id   Int    @id @default(autoincrement())
+  department_name String @unique
+  users           User[]
+}
+
+model Country {
+  country_id   Int     @id @default(autoincrement())
+  country_name String  @unique
+  country_code String? @db.VarChar(3)
+  is_active    Boolean @default(true)
+  states       State[]
+}
+
+model State {
+  state_id   Int     @id @default(autoincrement())
+  state_name String
+  country_id Int
+  is_active  Boolean @default(true)
+  cities     City[]
+  country    Country @relation(fields: [country_id], references: [country_id])
+
+  @@unique([state_name, country_id])
+  @@index([country_id])
+}
+
+model City {
+  city_id   Int     @id @default(autoincrement())
+  city_name String
+  state_id  Int
+  is_active Boolean @default(true)
+  state     State   @relation(fields: [state_id], references: [state_id])
+
+  @@unique([city_name, state_id])
+  @@index([state_id])
+}
+
+model Role {
+  role_id     Int      @id @default(autoincrement())
+  role_name   RoleName @unique
+  description String?
+  users       User[]
+}
+
+model Permission {
+  permission_id Int     @id @default(autoincrement())
+  module_name   String
+  can_view      Boolean @default(false)
+  can_create    Boolean @default(false)
+  can_edit      Boolean @default(false)
+  can_delete    Boolean @default(false)
+  user_id       Int
+  user          User    @relation(fields: [user_id], references: [user_id])
+
+  @@unique([user_id, module_name])
+}
+
+model User {
+  user_id            Int          @id @default(autoincrement())
+  name               String
+  email              String       @unique
+  mobile             String?
+  username           String       @unique
+  password_hash      String
+  role_id            Int
+  department_id      Int?
+  status             Status       @default(ACTIVE)
+  last_login_at      DateTime?
+  created_at         DateTime     @default(now())
+  refresh_token_hash String?
+  audit_logs         AuditLog[]
+  companies_created  Company[]    @relation("CompanyCreatedBy")
+  documents          Document[]
+  permissions        Permission[]
+  products_created   Product[]    @relation("ProductCreatedBy")
+  products_updated   Product[]    @relation("ProductUpdatedBy")
+  department         Department?  @relation(fields: [department_id], references: [department_id])
+  role               Role         @relation(fields: [role_id], references: [role_id])
+
+  @@index([email])
+  @@index([username])
+  @@index([department_id], map: "User_department_id_fkey")
+  @@index([role_id], map: "User_role_id_fkey")
+
+  enquiries Enquiry[]
+}
+
+model Product {
+  product_id           Int                      @id @default(autoincrement())
+  product_name         String
+  sku                  String                   @unique
+  composition          String?
+  category_id          Int?
+  grade_id             Int?
+  packaging_id         Int?
+  unit_of_measure      UnitOfMeasure?
+  shelf_life           String?
+  un_number            String?
+  industry_application String?                  @db.Text
+  hsn_code             String?
+  cas_number           String?                  @unique
+  description          String?                  @db.Text
+  status_flag          Int                      @default(0)
+  created_by           Int?
+  created_at           DateTime                 @default(now())
+  updated_by           Int?
+  updated_at           DateTime                 @updatedAt
+  mappings             CompanyProductMapping[]
+  interests            ContactProductInterest[]
+  category             Category?                @relation(fields: [category_id], references: [category_id])
+  creator              User?                    @relation("ProductCreatedBy", fields: [created_by], references: [user_id])
+  grade                Grade?                   @relation(fields: [grade_id], references: [grade_id])
+  packaging            Packaging?               @relation(fields: [packaging_id], references: [packaging_id])
+  updater              User?                    @relation("ProductUpdatedBy", fields: [updated_by], references: [user_id])
+
+  @@index([product_name])
+  @@index([category_id])
+  @@index([grade_id])
+  @@index([status_flag])          
+  @@index([created_by], map: "Product_created_by_fkey")
+  @@index([packaging_id], map: "Product_packaging_id_fkey")
+  @@index([updated_by], map: "Product_updated_by_fkey")
+  @@fulltext([description])
+}
+
+model Company {
+  company_id    Int                     @id @default(autoincrement())
+  company_name  String
+  company_type  CompanyType
+  address       String?
+  email         String?
+  phone         String?
+  remarks       String?                 @db.Text
+  gst_number    String?
+  pan_number    String?
+  cin_number    String?
+  website       String?
+  industry_type String?
+  status_flag          Int                      @default(0)
+  created_at    DateTime                @default(now())
+  updated_at    DateTime                @updatedAt
+  created_by    Int?
+  city          String?
+  country       String?                 @default("India")
+  state         String?
+  branches      Branch[]
+  creator       User?                   @relation("CompanyCreatedBy", fields: [created_by], references: [user_id])
+  mappings      CompanyProductMapping[]
+  contacts      Contact[]
+
+  @@index([company_type])
+  @@index([city])
+  @@index([state])
+  @@index([gst_number])
+  @@index([status_flag])  
+  @@index([created_by], map: "Company_created_by_fkey")
+  @@fulltext([company_name])
+}
+
+model Branch {
+  branch_id      Int       @id @default(autoincrement())
+  company_id     Int
+  branch_name    String
+  gst_number     String?
+  pan_number     String?
+  address_line1  String?
+  address_line2  String?
+  city           String?
+  state          String?
+  pincode        String?
+  country        String?   @default("India")
+  contact_number String?
+  email          String?
+  latitude       Decimal?  @db.Decimal(10, 8)
+  longitude      Decimal?  @db.Decimal(11, 8)
+  company        Company   @relation(fields: [company_id], references: [company_id])
+  contacts       Contact[]
+
+  @@index([city])
+  @@index([state])
+  @@index([company_id], map: "Branch_company_id_fkey")
+}
+
+model CompanyProductMapping {
+  mapping_id      Int      @id @default(autoincrement())
+  company_id      Int
+  product_id      Int
+  role_type       RoleType
+  moq             Decimal? @db.Decimal(10, 2)
+  price_range_min Decimal? @db.Decimal(10, 2)
+  price_range_max Decimal? @db.Decimal(10, 2)
+  lead_time_days  Int?
+  status_flag     Int      @default(0)
+  created_at      DateTime @default(now())
+  company         Company  @relation(fields: [company_id], references: [company_id])
+  product         Product  @relation(fields: [product_id], references: [product_id])
+
+  @@unique([company_id, product_id, role_type])
+  @@index([status_flag])
+  @@index([company_id])
+  @@index([product_id])
+}
+
+model Contact {
+  contact_id         Int                      @id @default(autoincrement())
+  first_name         String
+  last_name          String?
+  mobile             String
+  alternate_mobile   String?
+  email              String?
+  company_id         Int?
+  branch_id          Int?
+  contact_type       ContactType?
+  designation        String?
+  preferred_language PreferredLanguage?
+  tags               String?                  @db.Text
+  status_flag        Int                      @default(0)
+  created_at         DateTime                 @default(now())
+  updated_at         DateTime                 @updatedAt
+  branch             Branch?                  @relation(fields: [branch_id], references: [branch_id])
+  company            Company?                 @relation(fields: [company_id], references: [company_id])
+  interests          ContactProductInterest[]
+
+  @@index([mobile])
+  @@index([email])
+  @@index([contact_type])
+  @@index([preferred_language])
+  @@index([status_flag])
+  @@index([branch_id], map: "Contact_branch_id_fkey")
+  @@index([company_id], map: "Contact_company_id_fkey")
+}
+
+model ContactProductInterest {
+  id         Int      @id @default(autoincrement())
+  contact_id Int
+  product_id Int
+  created_at DateTime @default(now())
+  contact    Contact  @relation(fields: [contact_id], references: [contact_id], onDelete: Cascade)
+  product    Product  @relation(fields: [product_id], references: [product_id])
+
+  @@unique([contact_id, product_id])
+  @@index([contact_id])
+  @@index([product_id])
+}
+
+model AuditLog {
+  log_id      Int        @id @default(autoincrement())
+  user_id     Int
+  module_name String
+  action_type ActionType
+  record_id   Int?
+  old_values  String?    @db.Text
+  new_values  String?    @db.Text
+  ip_address  String?
+  user_agent  String?
+  created_at  DateTime   @default(now())
+  user        User       @relation(fields: [user_id], references: [user_id])
+
+  @@index([module_name])
+  @@index([action_type])
+  @@index([created_at])
+  @@index([user_id])
+}
+
+model Document {
+  document_id Int      @id @default(autoincrement())
+  entity_type String
+  entity_id   Int
+  file_name   String
+  file_url    String
+  uploaded_by Int
+  uploaded_at DateTime @default(now())
+  uploader    User     @relation(fields: [uploaded_by], references: [user_id])
+
+  @@index([entity_type, entity_id])
+  @@index([uploaded_by], map: "Document_uploaded_by_fkey")
+}
+
+
+model Enquiry {
+    enquiry_id Int @id @default(autoincrement())
+    enquiry_name String
+    user_id Int
+    module_type EnquiryModule
+    reference_id Int?
+    description String @db.Text
+    status EnquiryStatus@default(OPEN)
+    response String? @db.Text
+    responded_at DateTime?
+    requested_permissions Json?
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    
+    user  User  @relation(fields: [user_id], references: [user_id])
+
+    @@index([user_id])
+}
+
+
 
 enum UnitOfMeasure {
   KG
@@ -60,317 +380,18 @@ enum ActionType {
   LOGOUT
 }
 
-// --- MASTER TABLES ---
-
-model Category {
-  category_id   Int       @id @default(autoincrement())
-  category_name String    @unique
-  products      Product[]
+enum EnquiryModule {
+  PRODUCT
+  COMPANY
+  CONTACT
+  MAPPING
+  PERMISSION
+  ROLE
+  MASTERS
 }
 
-model Grade {
-  grade_id   Int       @id @default(autoincrement())
-  grade_name String    @unique
-  products   Product[]
-}
-
-model Packaging {
-  packaging_id   Int       @id @default(autoincrement())
-  packaging_name String    @unique
-  size_unit      String
-  size_value     Decimal   @db.Decimal(10, 2)
-  products       Product[]
-}
-
-model Department {
-  department_id   Int    @id @default(autoincrement())
-  department_name String @unique
-  users           User[]
-}
-
-model Country {
-  country_id   Int     @id @default(autoincrement())
-  country_name String  @unique
-  country_code String? @db.VarChar(3)
-  is_active    Boolean @default(true)
-  states       State[]
-}
-
-model State {
-  state_id    Int     @id @default(autoincrement())
-  state_name  String
-  country_id  Int
-  is_active   Boolean @default(true)
-  country     Country @relation(fields: [country_id], references: [country_id])
-  cities      City[]
-
-  @@unique([state_name, country_id])
-  @@index([country_id])
-}
-
-model City {
-  city_id   Int     @id @default(autoincrement())
-  city_name String
-  state_id  Int
-  is_active Boolean @default(true)
-  state     State   @relation(fields: [state_id], references: [state_id])
-
-  @@unique([city_name, state_id])
-  @@index([state_id])
-}
-
-// --- ROLES & PERMISSIONS ---
-
-model Role {
-  role_id     Int      @id @default(autoincrement())
-  role_name   RoleName @unique
-  description String?
-  users       User[]
-}
-
-model Permission {
-  permission_id Int     @id @default(autoincrement())
-  user_id       Int
-  module_name   String
-  can_view      Boolean @default(false)
-  can_create    Boolean @default(false)
-  can_edit      Boolean @default(false)
-  can_delete    Boolean @default(false)
-
-  user User @relation(fields: [user_id], references: [user_id])
-
-  @@unique([user_id, module_name])
-}
-
-// --- USERS ---
-
-model User {
-  user_id       Int        @id @default(autoincrement())
-  name          String
-  email         String     @unique
-  mobile        String?
-  username      String     @unique
-  password_hash String
-  role_id       Int
-  department_id Int?
-  refresh_token_hash String?    // nullable - null means logged out
-  status        Status     @default(ACTIVE)
-  last_login_at DateTime?
-  created_at    DateTime   @default(now())
-
-  role             Role        @relation(fields: [role_id], references: [role_id])
-  department       Department? @relation(fields: [department_id], references: [department_id])
-  products_created Product[]   @relation("ProductCreatedBy")
-  products_updated Product[]   @relation("ProductUpdatedBy")
-  companies_created Company[]  @relation("CompanyCreatedBy")
-  audit_logs       AuditLog[]
-  permissions      Permission[]
-  documents        Document[]
-
-  @@index([email])
-  @@index([username])
-}
-
-// --- PRODUCTS ---
-
-model Product {
-  product_id           Int            @id @default(autoincrement())
-  product_name         String
-  sku                  String         @unique
-  composition          String?
-  category_id          Int?
-  grade_id             Int?
-  packaging_id         Int?
-  unit_of_measure      UnitOfMeasure?
-  shelf_life           String?
-  un_number            String?
-  industry_application String?        @db.Text
-  hsn_code             String?
-  cas_number           String?        @unique
-  description          String?        @db.Text
-  status               Status         @default(ACTIVE)
-  created_by           Int?
-  created_at           DateTime       @default(now())
-  updated_by           Int?
-  updated_at           DateTime       @updatedAt
-
-  category  Category?               @relation(fields: [category_id], references: [category_id])
-  grade     Grade?                  @relation(fields: [grade_id], references: [grade_id])
-  packaging Packaging?              @relation(fields: [packaging_id], references: [packaging_id])
-  creator   User?                   @relation("ProductCreatedBy", fields: [created_by], references: [user_id])
-  updater   User?                   @relation("ProductUpdatedBy", fields: [updated_by], references: [user_id])
-  mappings  CompanyProductMapping[]
-  interests ContactProductInterest[]
-
-  @@index([product_name])
-  @@index([category_id])
-  @@index([grade_id])
-  @@index([status])
-  @@fulltext([description])
-}
-
-// --- COMPANIES ---
-
-model Company {
-  company_id    Int         @id @default(autoincrement())
-  company_name  String
-  company_type  CompanyType
-  address       String?
-  city          String?
-  state         String?
-  country       String?     @default("India")
-  email         String?
-  phone         String?
-  remarks       String?     @db.Text
-  gst_number    String?
-  pan_number    String?
-  cin_number    String?
-  website       String?
-  industry_type String?
-  status        Status      @default(ACTIVE)
-  created_by    Int?
-  created_at    DateTime    @default(now())
-  updated_at    DateTime    @updatedAt
-
-  creator  User?    @relation("CompanyCreatedBy", fields: [created_by], references: [user_id])
-  branches Branch[]
-  contacts Contact[]
-  mappings CompanyProductMapping[]
-
-  @@index([company_type])
-  @@index([city])
-  @@index([state])
-  @@index([gst_number])
-  @@index([status])
-  @@fulltext([company_name])
-}
-
-model Branch {
-  branch_id      Int      @id @default(autoincrement())
-  company_id     Int
-  branch_name    String
-  gst_number     String?
-  pan_number     String?
-  address_line1  String?
-  address_line2  String?
-  city           String?
-  state          String?
-  pincode        String?
-  country        String?  @default("India")
-  contact_number String?
-  email          String?
-  latitude       Decimal? @db.Decimal(10, 8)
-  longitude      Decimal? @db.Decimal(11, 8)
-
-  company  Company   @relation(fields: [company_id], references: [company_id])
-  contacts Contact[]
-
-  @@index([city])
-  @@index([state])
-}
-
-// --- COMPANY PRODUCT MAPPING ---
-
-model CompanyProductMapping {
-  mapping_id      Int      @id @default(autoincrement())
-  company_id      Int
-  product_id      Int
-  role_type       RoleType
-  moq             Decimal? @db.Decimal(10, 2)
-  price_range_min Decimal? @db.Decimal(10, 2)
-  price_range_max Decimal? @db.Decimal(10, 2)
-  lead_time_days  Int?
-  is_active       Boolean  @default(true)
-  created_at      DateTime @default(now())
-
-  company Company @relation(fields: [company_id], references: [company_id])
-  product Product @relation(fields: [product_id], references: [product_id])
-
-  @@unique([company_id, product_id, role_type])
-  @@index([company_id])
-  @@index([product_id])
-}
-
-// --- CONTACTS ---
-
-model Contact {
-  contact_id         Int                @id @default(autoincrement())
-  first_name         String
-  last_name          String?
-  mobile             String
-  alternate_mobile   String?
-  email              String?
-  company_id         Int?
-  branch_id          Int?
-  contact_type       ContactType?
-  designation        String?
-  preferred_language PreferredLanguage?
-  tags               String?            @db.Text
-  status             Status             @default(ACTIVE)
-  created_at         DateTime           @default(now())
-  updated_at         DateTime           @updatedAt
-
-  company   Company? @relation(fields: [company_id], references: [company_id])
-  branch    Branch?  @relation(fields: [branch_id], references: [branch_id])
-  interests ContactProductInterest[]
-
-  @@index([mobile])
-  @@index([email])
-  @@index([contact_type])
-  @@index([preferred_language])
-  @@index([status])
-}
-
-// --- CONTACT PRODUCT INTEREST ---
-
-model ContactProductInterest {
-  id         Int      @id @default(autoincrement())
-  contact_id Int
-  product_id Int
-  created_at DateTime @default(now())
-
-  contact Contact @relation(fields: [contact_id], references: [contact_id], onDelete: Cascade)
-  product Product @relation(fields: [product_id], references: [product_id])
-
-  @@unique([contact_id, product_id])
-  @@index([contact_id])
-  @@index([product_id])
-}
-
-// --- AUDIT LOG ---
-
-model AuditLog {
-  log_id      Int        @id @default(autoincrement())
-  user_id     Int
-  module_name String
-  action_type ActionType
-  record_id   Int?
-  old_values  String?    @db.Text
-  new_values  String?    @db.Text
-  ip_address  String?
-  user_agent  String?
-  created_at  DateTime   @default(now())
-
-  user User @relation(fields: [user_id], references: [user_id])
-
-  @@index([module_name])
-  @@index([action_type])
-  @@index([created_at])
-  @@index([user_id])
-}
-
-// --- DOCUMENTS ---
-
-model Document {
-  document_id   Int      @id @default(autoincrement())
-  entity_type   String   // 'COMPANY' or 'PRODUCT'
-  entity_id     Int
-  file_name     String
-  file_url      String
-  uploaded_by   Int
-  uploaded_at   DateTime @default(now())
-
-  uploader      User     @relation(fields: [uploaded_by], references: [user_id])
-
-  @@index([entity_type, entity_id])
+enum EnquiryStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
 }

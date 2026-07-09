@@ -30,12 +30,30 @@ const roleGuard = (moduleName, action) => {
           'FORBIDDEN'
         );
       }
-
       next();
     } catch (err) {
       next(err);
     }
-  };
+  }
 };
 
-module.exports = { roleGuard };
+// 🌟 ADD THIS BRAND NEW FUNCTION HERE 🌟
+const superAdminGuard = () => {
+  return async (req, res, next) => {
+    try {
+      // Check if the logged-in user's role_id is 1 (Super Admin)
+      const roleId = req.user?.role_id;
+      
+      if (roleId !== 1) {
+        return sendError(res, 'Super Admin access required', 403, [], 'FORBIDDEN');
+      }
+      
+      next();
+    } catch (err) {
+      next(err);
+    }
+  }
+};
+
+// Export both functions at the bottom!
+module.exports = { roleGuard, superAdminGuard };
