@@ -23,9 +23,6 @@ export const useUpdateProfile = () => {
       message.success('Profile updated successfully');
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
-    onError: (error) => {
-      message.error(error?.response?.data?.message || 'Failed to update profile');
-    }
   });
 };
 
@@ -38,8 +35,5 @@ export const useChangePassword = () => {
     onSuccess: () => {
       message.success('Password changed successfully');
     },
-    onError: (error) => {
-      message.error(error?.response?.data?.message || 'Failed to change password');
-    }
   });
 };

@@ -1,5 +1,6 @@
 import { Modal } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
+import './styles/ConfirmDeactivate.css';
 
 function ConfirmDeactivate({ open, onConfirm, onCancel, recordName = 'this record', loading = false }) {
   return (
@@ -12,7 +13,7 @@ function ConfirmDeactivate({ open, onConfirm, onCancel, recordName = 'this recor
       okButtonProps={{ danger: true, loading }}
       title={
         <span>
-          <ExclamationCircleOutlined style={{ color: '#faad14', marginRight: 8 }} />
+          <ExclamationCircleOutlined className="confirm-deactivate__icon" />
           Confirm Deactivation
         </span>
       }

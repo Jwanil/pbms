@@ -1,4 +1,5 @@
 import { Modal, Form, Button, Space } from 'antd';
+import './styles/FormModal.css';
 
 function FormModal({ open, onClose, onSubmit, title, children, loading = false, width = 640, form }) {
   const handleOk = () => {
@@ -21,14 +22,14 @@ function FormModal({ open, onClose, onSubmit, title, children, loading = false, 
       footer={
         <Space>
           <Button onClick={handleClose} disabled={loading}>Cancel</Button>
-          <Button type="primary" onClick={handleOk} loading={loading} style={{ background: '#1F3A6E' }}>
+          <Button type="primary" onClick={handleOk} loading={loading} className="form-modal-submit-btn">
             Save
           </Button>
         </Space>
       }
       destroyOnClose
     >
-      <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+      <Form form={form} layout="vertical" className="form-modal-form" autoComplete="off">
         {children}
       </Form>
     </Modal>

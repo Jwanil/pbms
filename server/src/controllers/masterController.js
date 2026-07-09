@@ -29,7 +29,7 @@ const packagingSchema = z.object({
 
 // ── Helper to reduce repetition ───────────────────────────
 const handleError = (res, err, next) => {
-  if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
+  if (err.statusCode) return sendError(res, err.message, err.statusCode, err.errors || [], err.code);
   next(err);
 };
 

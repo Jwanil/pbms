@@ -1,0 +1,207 @@
+/* BulkImportModal.css */
+
+/* ── Step indicator ── */
+.import-steps {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #8c8c8c;
+}
+
+.import-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.import-step--active { color: #13c2c2; }
+
+.import-step__number {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #595959;
+}
+
+.import-step__arrow {
+  margin: 0 16px;
+  color: #d9d9d9;
+  font-size: 18px;
+}
+
+/* ── Template download row ── */
+.import-template-row {
+  border: 1px dashed #d9d9d9;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.import-template-icon {
+  margin-right: 8px;
+  color: #13c2c2;
+}
+
+/* ── Field reference grid ── */
+.import-fields-wrapper {
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.import-fields-grid {
+  display: inline-flex;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fafafa;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.import-field-cell {
+  padding: 4px 12px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.import-field-cell__name {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.import-field-cell__name--required { color: #d46b08; }
+.import-field-cell__name--optional { color: #08979c; }
+
+.import-field-cell__hint {
+  color: #8c8c8c;
+  font-size: 11px;
+}
+
+/* ── Drop zone ── */
+.import-dropzone {
+  border: 2px dashed #13c2c2;
+  background: #f0fffe;
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.import-file-hidden { display: none; }
+
+/* ── Step 1: right-align next button ── */
+.import-step1-actions { text-align: right; }
+
+/* ── Step 2: summary stat badges ── */
+.import-summary-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.import-stat-badge {
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 13px;
+}
+
+.import-stat-badge--success {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.import-stat-badge--warning {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+}
+
+.import-stat-badge--error {
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+}
+
+.import-stat-text--success { color: #52c41a; }
+.import-stat-text--warning { color: #d46b08; }
+.import-stat-text--error   { color: #cf1322; }
+
+/* ── Duplicate alert ── */
+.import-dup-alert { margin-bottom: 12px; }
+
+/* ── Step 2: nav row ── */
+.import-step2-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+/* ── Status tag in preview table ── */
+.import-status-tag {
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* ── Step 3: success screen ── */
+.import-success {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.import-success__icon {
+  font-size: 64px;
+  color: #52c41a;
+  margin-bottom: 16px;
+}
+
+.import-success__summary {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  padding: 16px;
+  display: inline-block;
+  min-width: 300px;
+  margin-bottom: 24px;
+}
+
+.import-success__summary-text {
+  color: #52c41a;
+  font-size: 16px;
+}
+
+/* ── Step 3: errors block ── */
+.import-errors-block {
+  text-align: left;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.import-errors-block__title {
+  color: #fa8c16;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.import-errors-block__warning-icon { margin-right: 8px; }
+
+.import-errors-list {
+  padding-left: 20px;
+  margin: 0;
+  color: #d46b08;
+}
+
+.import-errors-list__item { margin-bottom: 4px; }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Drawer, Spin, Typography } from 'antd';
+import './styles/ViewDrawer.css';
 
 const { Title } = Typography;
 
@@ -7,7 +8,7 @@ const ViewDrawer = ({ open, onClose, title, loading, children, width = 900 }) =>
   return (
     <Drawer
       title={
-        <span style={{ fontSize: 16, fontWeight: 600, color: '#1F3A6E' }}>
+        <span className="view-drawer__title">
           {title}
         </span>
       }

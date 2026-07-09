@@ -1,5 +1,6 @@
 import React from 'react';
 import { Tag, Divider, Typography, Row, Col } from 'antd';
+import './styles/ViewDrawerShared.css';
 import { LinkOutlined, ShopOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import ViewDrawer from './ViewDrawer';
@@ -9,27 +10,21 @@ import { useMapping } from '../api/mappingsApi';
 const { Text, Title } = Typography;
 
 const SectionTitle = ({ icon, title }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, marginTop: 4 }}>
-    <span style={{ color: '#1F3A6E', fontSize: 15 }}>{icon}</span>
-    <Title level={5} style={{ margin: 0, color: '#1F3A6E', fontWeight: 600 }}>{title}</Title>
+  <div className="drawer-section-heading">
+    <span className="drawer-section-heading__icon">{icon}</span>
+    <Title level={5} className="drawer-section-heading__title">{title}</Title>
   </div>
 );
 
 const InfoGrid = ({ items }) => (
-  <Row gutter={[16, 8]} style={{ marginBottom: 4 }}>
+  <Row gutter={[16, 8]} className="drawer-fields-row">
     {items.map(({ label, value, span = 12 }) => (
       <Col span={span} key={label}>
-        <div style={{
-          background: '#fff',
-          border: '1px solid #e8edf5',
-          borderRadius: 8,
-          padding: '10px 14px',
-          height: '100%',
-        }}>
-          <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+        <div className="drawer-field">
+          <Text type="secondary" className="drawer-field__label">
             {label}
           </Text>
-          <Text strong style={{ fontSize: 13, color: '#1a1a2e', wordBreak: 'break-word' }}>
+          <Text strong className="drawer-field__value">
             {value || <Text type="secondary">—</Text>}
           </Text>
         </div>
@@ -60,35 +55,35 @@ const MappingViewDrawer = ({ mappingId, open, onClose }) => {
         { label: 'Company Name', value: mapping.company?.company_name, span: 24 },
         {
           label: 'Company Type',
-          value: <Tag color={COMPANY_TYPE_COLORS[mapping.company?.company_type] || 'default'} style={{ borderRadius: 4 }}>
+          value: <Tag color={COMPANY_TYPE_COLORS[mapping.company?.company_type] || 'default'} className="drawer-tag">
             {mapping.company?.company_type}
           </Tag>,
         },
         { label: 'Company Email', value: mapping.company?.email },
         { label: 'Company Phone', value: mapping.company?.phone },
-        { label: 'Company Status', value: <StatusBadge status={mapping.company?.status} /> },
+        { label: 'Company Status', value: <StatusBadge status={mapping.company?.status_flag} /> },
       ]} />
 
-      <Divider style={{ margin: '16px 0' }} />
+      <Divider className="drawer-divider" />
       <SectionTitle icon={<InfoCircleOutlined />} title="Product" />
       <InfoGrid items={[
         { label: 'Product Name', value: mapping.product?.product_name, span: 24 },
         { label: 'SKU', value: mapping.product?.sku },
-        { label: 'Product Status', value: <StatusBadge status={mapping.product?.status} /> },
+        { label: 'Product Status', value: <StatusBadge status={mapping.product?.status_flag} /> },
       ]} />
 
-      <Divider style={{ margin: '16px 0' }} />
+      <Divider className="drawer-divider" />
       <SectionTitle icon={<LinkOutlined />} title="Mapping Terms" />
       <InfoGrid items={[
         {
           label: 'Role Type',
-          value: <Tag color={ROLE_COLORS[mapping.role_type] || 'default'} style={{ borderRadius: 4 }}>
+          value: <Tag color={ROLE_COLORS[mapping.role_type] || 'default'} className="drawer-tag">
             {mapping.role_type}
           </Tag>,
         },
         {
           label: 'Active Status',
-          value: <StatusBadge status={mapping.is_active ? 'ACTIVE' : 'INACTIVE'} />,
+          value: <StatusBadge status={mapping.status_flag} />,
         },
         {
           label: 'MOQ',

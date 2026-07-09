@@ -1,0 +1,127 @@
+/* ViewDrawerShared.css
+   Shared styles for all *ViewDrawer components */
+
+/* ── Section heading row (icon + title) ── */
+.drawer-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  margin-top: 4px;
+}
+
+.drawer-section-heading__icon {
+  color: #1F3A6E;
+  font-size: 15px;
+}
+
+.drawer-section-heading__title {
+  margin: 0 !important;
+  color: #1F3A6E !important;
+  font-weight: 600 !important;
+}
+
+/* ── ProductViewDrawer variant: slightly bigger heading ── */
+.drawer-section-heading--lg {
+  gap: 10px;
+  margin-bottom: 16px;
+  margin-top: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.drawer-section-heading--lg .drawer-section-heading__icon { font-size: 18px; }
+
+/* ── Info field rows ── */
+.drawer-fields-row { margin-bottom: 4px; }
+
+/* ── Individual field block ── */
+.drawer-field {
+  padding: 8px 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+}
+
+.drawer-field__label {
+  font-size: 11px;
+  display: block;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.drawer-field__value {
+  font-size: 13px;
+  color: #1a1a2e;
+  word-break: break-word;
+}
+
+/* ── ProductViewDrawer field variant ── */
+.drawer-field--lg {
+  padding: 10px 14px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.drawer-field--lg .drawer-field__label {
+  font-size: 12px;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.drawer-field--lg .drawer-field__value {
+  font-size: 15px;
+  display: block;
+}
+
+/* ── Dividers between sections ── */
+.drawer-divider { margin: 16px 0 !important; }
+
+/* ── Rounded tags (used across all drawers) ── */
+.drawer-tag { border-radius: 4px !important; }
+
+.drawer-tag--sm {
+  border-radius: 4px !important;
+  padding: 2px 8px !important;
+  font-size: 13px !important;
+}
+
+/* ── Table card wrapper (branches, products, mappings) ── */
+.drawer-table-card {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e8edf5;
+}
+
+/* ── ProductViewDrawer table card variant ── */
+.drawer-table-card--shadow {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* ── Tab label icon spacing ── */
+.drawer-tab-icon { margin-right: 6px; }
+
+/* ── Contact tags block ── */
+.drawer-tags-block {
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #e8edf5;
+  border-radius: 8px;
+}
+
+.drawer-tags-block__tag {
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+/* ── ProductViewDrawer section content padding ── */
+.drawer-section-content { padding: 8px 0; }
+
+/* ── Inline label icon (tab labels) ── */
+.drawer-tab-label { font-size: 15px; padding: 0 8px; }

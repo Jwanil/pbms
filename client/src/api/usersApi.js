@@ -30,9 +30,6 @@ export const useCreateUser = () => {
       message.success('User created successfully');
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to create user');
-    },
   });
 };
 
@@ -44,9 +41,6 @@ export const useUpdateUser = () => {
       message.success('User updated successfully');
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to update user');
-    },
   });
 };
 
@@ -57,9 +51,6 @@ export const useDeactivateUser = () => {
     onSuccess: () => {
       message.success('User deactivated');
       queryClient.invalidateQueries({ queryKey: ['users'] });
-    },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to deactivate user');
     },
   });
 };
@@ -80,6 +71,5 @@ export const useResetUserPassword = () => {
     mutationFn: ({ userId, newPassword }) =>
       api.patch(`/users/${userId}/reset-password`, { new_password: newPassword }),
     onSuccess: () => { message.success('Password reset. User session terminated.'); },
-    onError: (err) => { message.error(err?.response?.data?.message || 'Failed to reset password'); }
   });
 };

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
+import './styles/BulkImportModal.css';
 import { Modal, Button, Spin, Table, Alert, Typography, Collapse, message, Tag, Checkbox } from 'antd';
 import {
   UploadOutlined, FileTextOutlined, DownloadOutlined,
@@ -268,15 +269,13 @@ const BulkImportModal = ({ open, onClose, module, moduleName, onImportSuccess })
 
   // ─── Stepper ────────────────────────────────────────────────────────────────
   const Stepper = useMemo(() => (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24, fontSize: 15, fontWeight: 500, color: '#8c8c8c' }}>
+    <div className="import-steps">
       {[{ label: 'Upload', n: 1 }, { label: 'Preview', n: 2 }, { label: 'Result', n: 3 }].map(({ label, n }, idx, arr) => (
         <React.Fragment key={n}>
-          <span style={{ color: step >= n ? '#13c2c2' : 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span className={`import-step${step >= n ? ' import-step--active' : ''}`}>
             {step > n
               ? <CheckCircleFilled style={{ fontSize: 18 }} />
-              : <span style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: 22, height: 22, borderRadius: '50%', fontSize: 12, fontWeight: 700,
+              : <span className="import-step__number" style={{
                   border: `2px solid ${step >= n ? '#13c2c2' : '#d9d9d9'}`,
                   background: step === n ? '#13c2c2' : 'transparent',
                   color: step === n ? '#fff' : 'inherit',
@@ -285,7 +284,7 @@ const BulkImportModal = ({ open, onClose, module, moduleName, onImportSuccess })
             {label}
           </span>
           {idx < arr.length - 1 && (
-            <span style={{ margin: '0 16px', color: '#d9d9d9', fontSize: 18 }}>→</span>
+            <span className="import-step__arrow">→</span>
           )}
         </React.Fragment>
       ))}
@@ -295,21 +294,21 @@ const BulkImportModal = ({ open, onClose, module, moduleName, onImportSuccess })
   // ─── Step 1 ─────────────────────────────────────────────────────────────────
   const Step1 = useMemo(() => (
     <div>
-      <div style={{ border: '1px dashed #d9d9d9', borderRadius: 8, padding: 16, marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="import-template-row">
         <div>
-          <Title level={5} style={{ margin: 0 }}><FileTextOutlined style={{ marginRight: 8, color: '#13c2c2' }} />Download CSV Template</Title>
+          <Title level={5} style={{ margin: 0 }}><FileTextOutlined className="import-template-icon" />Download CSV Template</Title>
           <Text type="secondary">Use this template to format your data correctly</Text>
         </div>
         <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>Template</Button>
       </div>
 
-      <div style={{ marginBottom: 20, overflowX: 'auto' }}>
+      <div className="import-fields-wrapper">
         <Text strong style={{ display: 'block', marginBottom: 8 }}>Field Reference</Text>
-        <div style={{ display: 'inline-flex', border: '1px solid #f0f0f0', borderRadius: 6, padding: 8, background: '#fafafa', flexWrap: 'wrap', gap: 4 }}>
+        <div className="import-fields-grid">
           {MODULE_FIELDS[module].map(f => (
-            <div key={f.name} style={{ padding: '4px 12px', textAlign: 'center', minWidth: 100 }}>
-              <div style={{ color: f.required ? '#d46b08' : '#08979c', fontWeight: 600, fontSize: 12, marginBottom: 2 }}>{f.name}</div>
-              <div style={{ color: '#8c8c8c', fontSize: 11 }}>{f.required ? '(Required)' : '(Optional)'}</div>
+            <div key={f.name} className="import-field-cell">
+              <div className={`import-field-cell__name ${f.required ? 'import-field-cell__name--required' : 'import-field-cell__name--optional'}`}>{f.name}</div>
+              <div className="import-field-cell__hint">{f.required ? '(Required)' : '(Optional)'}</div>
             </div>
           ))}
         </div>
@@ -319,9 +318,9 @@ const BulkImportModal = ({ open, onClose, module, moduleName, onImportSuccess })
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => fileInputRef.current?.click()}
-        style={{ border: '2px dashed #13c2c2', background: '#f0fffe', borderRadius: 8, padding: 40, textAlign: 'center', cursor: 'pointer', marginBottom: 16 }}
+        className="import-dropzone"
       >
-        <input type="file" accept=".csv" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} />
+        <input type="file" accept=".csv" ref={fileInputRef} onChange={handleFileChange} className="import-file-hidden" />
         {file ? (
           <div>
             <CheckCircleFilled style={{ fontSize: 32, color: '#52c41a', marginBottom: 10 }} />
@@ -339,7 +338,7 @@ const BulkImportModal = ({ open, onClose, module, moduleName, onImportSuccess })
 
       {validationError && <Alert message={validationError} type="error" showIcon style={{ marginBottom: 12 }} />}
 
-      <div style={{ textAlign: 'right' }}>
+      <div className="import-step1-actions">
         <Button type="primary" disabled={!file} loading={isChecking} onClick={handleNextStep1}>
           {isChecking ? 'Checking...' : 'Next →'}
         </Button>
@@ -367,7 +366,7 @@ const BulkImportModal = ({ open, onClose, module, moduleName, onImportSuccess })
         fixed: 'left',
         render: (_, row) => {
           const cfg = statusConfig[row._status];
-          return <Tag color={cfg.color} style={{ borderRadius: 4, fontSize: 11 }}>{cfg.label}</Tag>;
+          return <Tag color={cfg.color} className="import-status-tag">{cfg.label}</Tag>;
         },
       },
       ...dataKeys.map(key => ({
@@ -383,18 +382,18 @@ const BulkImportModal = ({ open, onClose, module, moduleName, onImportSuccess })
   const Step2 = useMemo(() => (
     <Spin spinning={isUploading} tip="Importing data...">
       {summaryStats && (
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-          <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6, padding: '6px 16px', fontSize: 13 }}>
-            <Text strong style={{ color: '#52c41a' }}>✓ {summaryStats.newCount} new rows</Text>
+        <div className="import-summary-row">
+          <div className="import-stat-badge import-stat-badge--success">
+            <Text strong className="import-stat-text--success">✓ {summaryStats.newCount} new rows</Text>
           </div>
           {summaryStats.csvDupCount > 0 && (
-            <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 6, padding: '6px 16px', fontSize: 13 }}>
-              <Text strong style={{ color: '#d46b08' }}>⚠ {summaryStats.csvDupCount} duplicates in CSV</Text>
+            <div className="import-stat-badge import-stat-badge--warning">
+              <Text strong className="import-stat-text--warning">⚠ {summaryStats.csvDupCount} duplicates in CSV</Text>
             </div>
           )}
           {summaryStats.dbDupCount > 0 && (
-            <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 6, padding: '6px 16px', fontSize: 13 }}>
-              <Text strong style={{ color: '#cf1322' }}>✕ {summaryStats.dbDupCount} already exist in DB</Text>
+            <div className="import-stat-badge import-stat-badge--error">
+              <Text strong className="import-stat-text--error">✕ {summaryStats.dbDupCount} already exist in DB</Text>
             </div>
           )}
         </div>
@@ -405,7 +404,7 @@ const BulkImportModal = ({ open, onClose, module, moduleName, onImportSuccess })
           showIcon
           icon={<InfoCircleOutlined />}
           message="Duplicate rows are pre-unchecked. You can manually re-check any row to include it."
-          style={{ marginBottom: 12 }}
+          className="import-dup-alert"
         />
       )}
       <Table
@@ -423,7 +422,7 @@ const BulkImportModal = ({ open, onClose, module, moduleName, onImportSuccess })
         bordered
         rowClassName={(row) => row._status !== ROW_STATUS.NEW ? 'import-dup-row' : ''}
       />
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
+      <div className="import-step2-nav">
         <Button onClick={() => setStep(1)}>← Back</Button>
         <Button
           type="primary"
@@ -438,25 +437,25 @@ const BulkImportModal = ({ open, onClose, module, moduleName, onImportSuccess })
 
   // ─── Step 3 ─────────────────────────────────────────────────────────────────
   const Step3 = useMemo(() => (
-    <div style={{ textAlign: 'center', padding: '20px 0' }}>
-      <CheckCircleFilled style={{ fontSize: 64, color: '#52c41a', marginBottom: 16 }} />
+    <div className="import-success">
+      <CheckCircleFilled className="import-success__icon" />
       <Title level={3}>Import Complete!</Title>
 
-      <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 8, padding: 16, display: 'inline-block', minWidth: 300, marginBottom: 24 }}>
-        <Text strong style={{ color: '#52c41a', fontSize: 16 }}>✓ {result?.imported || 0} records imported successfully</Text>
+      <div className="import-success__summary">
+        <Text strong className="import-success__summary-text">✓ {result?.imported || 0} records imported successfully</Text>
       </div>
 
       {result?.skipped > 0 && (
-        <div style={{ textAlign: 'left', background: '#fff7e6', border: '1px solid #ffd591', borderRadius: 8, padding: 16 }}>
-          <Text strong style={{ color: '#fa8c16', display: 'block', marginBottom: 12 }}>
-            <WarningFilled style={{ marginRight: 8 }} />
+        <div className="import-errors-block">
+          <Text strong className="import-errors-block__title">
+            <WarningFilled className="import-errors-block__warning-icon" />
             ⚠ {result.skipped} rows skipped
           </Text>
           <Collapse ghost size="small">
             <Panel header="View skipped rows details" key="1">
-              <ul style={{ paddingLeft: 20, margin: 0, color: '#d46b08' }}>
+              <ul className="import-errors-list">
                 {result.errors?.map((err, i) => (
-                  <li key={i} style={{ marginBottom: 4 }}>Row {err.row}: {err.reason}</li>
+                  <li key={i} className="import-errors-list__item">Row {err.row}: {err.reason}</li>
                 ))}
               </ul>
             </Panel>

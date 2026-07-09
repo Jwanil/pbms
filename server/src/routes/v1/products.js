@@ -99,7 +99,7 @@ const {
   getProductsController, getProductByIdController, createProductController,
   updateProductController, deactivateProductController, reactivateProductController,
   getFormDataController, exportProductsController, sampleCsvProductsController,
-  importProductsController, checkDuplicatesController, importJsonController
+  importProductsController, checkDuplicatesController, importJsonController, deleteProductController
 } = require('../../controllers/productController');
 const { verifyToken } = require('../../middleware/verifyToken');
 const { roleGuard } = require('../../middleware/roleGuard');
@@ -155,5 +155,10 @@ router.post('/import-json', verifyToken, roleGuard('products', 'can_create'), im
 router.put('/:id', verifyToken, roleGuard('products', 'can_edit'), updateProductController);
 router.patch('/:id/deactivate', verifyToken, roleGuard('products', 'can_delete'), deactivateProductController);
 router.patch('/:id/reactivate', verifyToken, roleGuard('products', 'can_edit'), reactivateProductController);
+
+// products.js
+router.delete('/:id',           verifyToken, roleGuard('products', 'can_delete'), deleteProductController);
+router.patch('/:id/deactivate', verifyToken, roleGuard('products', 'can_edit'),   deactivateProductController);
+router.patch('/:id/reactivate', verifyToken, roleGuard('products', 'can_edit'),   reactivateProductController);
 
 module.exports = router;

@@ -1,0 +1,10 @@
+/* ─────────────────────────────────────────────────────
+   Masters.css  —  Shared styles for all Masters pages
+   (Categories, Departments, Grades, Packaging)
+   Applied via MasterPage component
+───────────────────────────────────────────────────── */
+
+/* ── InputNumber fields: full width ── */
+.masters-input-full {
+  width: 100%;
+}

@@ -16,7 +16,7 @@ const branchSchema = z.object({
     .or(z.literal('')),
   pan_number: z.string()
     .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format')
-    .optional()
+    .optional() 
     .nullable()
     .or(z.literal('')),
   address_line1: z.string().max(255).optional().nullable(),
@@ -37,6 +37,7 @@ const branchSchema = z.object({
   email: z.string().email('Invalid email format').max(255).optional().nullable().or(z.literal('')),
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
+  
 });
 
 const companySchema = z.object({
@@ -92,13 +93,14 @@ const companySchema = z.object({
     .or(z.literal('')),
   industry_type: z.string().max(100).optional().nullable(),
   branches: z.array(branchSchema).optional().default([]),
+  status_flag: z.number().int().min(0).max(2).optional(), // 0=Active, 1=Deleted, 2=Inactive
 });
 
 const getCompaniesController = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, search = '', company_type, status } = req.query;
+    const { page = 1, limit = 20, search = '', company_type, status:status_flag } = req.query;
     const result = await companyService.getCompanies({
-      page: parseInt(page), limit: parseInt(limit), search, company_type, status
+      page: parseInt(page), limit: parseInt(limit), search, company_type, status:status_flag
     });
     return sendPaginated(res, result.companies, { page: parseInt(page), limit: parseInt(limit), total: result.total });
   } catch (err) { next(err); }
@@ -173,10 +175,22 @@ const updateCompanyController = async (req, res, next) => {
   }
 };
 
+
+const deleteCompanyController = async (req, res, next) => {
+  try{
+    await companyService.deleteCompany(parseInt(req.params.id));
+    //await writeAuditLog(prisma, req.user.user_id, 'companies', 'DELETE', parseInt(req.params.id), null, { status: 'DELETED' }, req);
+    return sendSuccess(res, null, 'Company deleted');
+  } catch (err) {
+    if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
+    next(err);
+  }
+}
+
 const deactivateCompanyController = async (req, res, next) => {
   try {
     await companyService.deactivateCompany(parseInt(req.params.id));
-    await writeAuditLog(prisma, req.user.user_id, 'companies', 'DELETE', parseInt(req.params.id), null, { status: 'INACTIVE' }, req);
+    //await writeAuditLog(prisma, req.user.user_id, 'companies', 'DELETE', parseInt(req.params.id), null, { status: 'INACTIVE' }, req);
     return sendSuccess(res, null, 'Company deactivated');
   } catch (err) {
     if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
@@ -187,7 +201,7 @@ const deactivateCompanyController = async (req, res, next) => {
 const reactivateCompanyController = async (req, res, next) => {
   try {
     await companyService.reactivateCompany(parseInt(req.params.id));
-    await writeAuditLog(prisma, req.user.user_id, 'companies', 'UPDATE', parseInt(req.params.id), { status: 'INACTIVE' }, { status: 'ACTIVE' }, req);
+    //await writeAuditLog(prisma, req.user.user_id, 'companies', 'UPDATE', parseInt(req.params.id), { status: 'INACTIVE' }, { status: 'ACTIVE' }, req);
     return sendSuccess(res, null, 'Company reactivated');
   } catch (err) { next(err); }
 };
@@ -210,7 +224,7 @@ const exportCompaniesController = async (req, res, next) => {
         industry_type: true,
         address: true,
         remarks: true,
-        status: true
+        status_flag: true
       }
     });
 
@@ -345,7 +359,7 @@ const importJsonController = async (req, res, next) => {
 
 module.exports = {
   getCompaniesController, getCompanyByIdController, createCompanyController,
-  updateCompanyController, deactivateCompanyController, reactivateCompanyController,
+  updateCompanyController, deleteCompanyController, deactivateCompanyController, reactivateCompanyController,
   exportCompaniesController, sampleCsvCompaniesController, importCompaniesController,
   checkDuplicatesController, importJsonController
 };

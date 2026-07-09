@@ -10,7 +10,12 @@ const getCategories = async () => {
 
 const createCategory = async (category_name) => {
   const existing = await prisma.category.findUnique({ where: { category_name } });
-  if (existing) throw { statusCode: 409, message: 'A category with this name already exists', code: 'CONFLICT' };
+  if (existing) throw { 
+    statusCode: 400, 
+    message: 'Validation failed', 
+    code: 'VALIDATION_ERROR',
+    errors: [{ field: 'category_name', message: 'A category with this name already exists' }]
+  };
   return prisma.category.create({ data: { category_name } });
 };
 
@@ -18,7 +23,12 @@ const updateCategory = async (id, category_name) => {
   const existing = await prisma.category.findFirst({
     where: { category_name, category_id: { not: id } }
   });
-  if (existing) throw { statusCode: 409, message: 'A category with this name already exists', code: 'CONFLICT' };
+  if (existing) throw { 
+    statusCode: 400, 
+    message: 'Validation failed', 
+    code: 'VALIDATION_ERROR',
+    errors: [{ field: 'category_name', message: 'A category with this name already exists' }]
+  };
   return prisma.category.update({ where: { category_id: id }, data: { category_name } });
 };
 
@@ -36,7 +46,12 @@ const getGrades = async () => {
 
 const createGrade = async (grade_name) => {
   const existing = await prisma.grade.findUnique({ where: { grade_name } });
-  if (existing) throw { statusCode: 409, message: 'A grade with this name already exists', code: 'CONFLICT' };
+  if (existing) throw { 
+    statusCode: 400, 
+    message: 'Validation failed', 
+    code: 'VALIDATION_ERROR',
+    errors: [{ field: 'grade_name', message: 'A grade with this name already exists' }]
+  };
   return prisma.grade.create({ data: { grade_name } });
 };
 
@@ -44,7 +59,12 @@ const updateGrade = async (id, grade_name) => {
   const existing = await prisma.grade.findFirst({
     where: { grade_name, grade_id: { not: id } }
   });
-  if (existing) throw { statusCode: 409, message: 'A grade with this name already exists', code: 'CONFLICT' };
+  if (existing) throw { 
+    statusCode: 400, 
+    message: 'Validation failed', 
+    code: 'VALIDATION_ERROR',
+    errors: [{ field: 'grade_name', message: 'A grade with this name already exists' }]
+  };
   return prisma.grade.update({ where: { grade_id: id }, data: { grade_name } });
 };
 
@@ -62,7 +82,12 @@ const getPackaging = async () => {
 
 const createPackaging = async ({ packaging_name, size_unit, size_value }) => {
   const existing = await prisma.packaging.findUnique({ where: { packaging_name } });
-  if (existing) throw { statusCode: 409, message: 'A packaging type with this name already exists', code: 'CONFLICT' };
+  if (existing) throw { 
+    statusCode: 400, 
+    message: 'Validation failed', 
+    code: 'VALIDATION_ERROR',
+    errors: [{ field: 'packaging_name', message: 'A packaging type with this name already exists' }]
+  };
   return prisma.packaging.create({ data: { packaging_name, size_unit, size_value } });
 };
 
@@ -70,7 +95,12 @@ const updatePackaging = async (id, { packaging_name, size_unit, size_value }) =>
   const existing = await prisma.packaging.findFirst({
     where: { packaging_name, packaging_id: { not: id } }
   });
-  if (existing) throw { statusCode: 409, message: 'A packaging type with this name already exists', code: 'CONFLICT' };
+  if (existing) throw { 
+    statusCode: 400, 
+    message: 'Validation failed', 
+    code: 'VALIDATION_ERROR',
+    errors: [{ field: 'packaging_name', message: 'A packaging type with this name already exists' }]
+  };
   return prisma.packaging.update({
     where: { packaging_id: id },
     data: { packaging_name, size_unit, size_value }
@@ -91,7 +121,12 @@ const getDepartments = async () => {
 
 const createDepartment = async (department_name) => {
   const existing = await prisma.department.findUnique({ where: { department_name } });
-  if (existing) throw { statusCode: 409, message: 'A department with this name already exists', code: 'CONFLICT' };
+  if (existing) throw { 
+    statusCode: 400, 
+    message: 'Validation failed', 
+    code: 'VALIDATION_ERROR',
+    errors: [{ field: 'department_name', message: 'A department with this name already exists' }]
+  };
   return prisma.department.create({ data: { department_name } });
 };
 
@@ -99,7 +134,12 @@ const updateDepartment = async (id, department_name) => {
   const existing = await prisma.department.findFirst({
     where: { department_name, department_id: { not: id } }
   });
-  if (existing) throw { statusCode: 409, message: 'A department with this name already exists', code: 'CONFLICT' };
+  if (existing) throw { 
+    statusCode: 400, 
+    message: 'Validation failed', 
+    code: 'VALIDATION_ERROR',
+    errors: [{ field: 'department_name', message: 'A department with this name already exists' }]
+  };
   return prisma.department.update({ where: { department_id: id }, data: { department_name } });
 };
 

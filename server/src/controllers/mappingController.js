@@ -28,6 +28,7 @@ const mappingFields = {
     .max(3650, 'Lead time cannot exceed 3650 days (10 years)')
     .optional()
     .nullable(),
+  status_flag: z.number().int().min(0).max(2).optional(),
 };
 
 const refineCheck = [
@@ -60,9 +61,9 @@ const updateMappingSchema = z.object({
 
 const getMappingsController = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, company_id, product_id, role_type, is_active } = req.query;
+    const { page = 1, limit = 20, company_id, product_id, role_type, status } = req.query;
     const result = await mappingService.getMappings({
-      page: parseInt(page), limit: parseInt(limit), company_id, product_id, role_type, is_active
+      page: parseInt(page), limit: parseInt(limit), company_id, product_id, role_type, status: status
     });
     return sendPaginated(res, result.mappings, { page: parseInt(page), limit: parseInt(limit), total: result.total });
   } catch (err) { next(err); }
@@ -113,7 +114,7 @@ const updateMappingController = async (req, res, next) => {
 const deactivateMappingController = async (req, res, next) => {
   try {
     await mappingService.deactivateMapping(parseInt(req.params.id));
-    await writeAuditLog(prisma, req.user.user_id, 'mappings', 'DELETE', parseInt(req.params.id), null, { is_active: false }, req);
+    await writeAuditLog(prisma, req.user.user_id, 'mappings', 'DELETE', parseInt(req.params.id), null, { status_flag: 2 }, req);
     return sendSuccess(res, null, 'Mapping deactivated');
   } catch (err) {
     if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
@@ -124,12 +125,22 @@ const deactivateMappingController = async (req, res, next) => {
 const reactivateMappingController = async (req, res, next) => {
   try {
     await mappingService.reactivateMapping(parseInt(req.params.id));
-    await writeAuditLog(prisma, req.user.user_id, 'mappings', 'UPDATE', parseInt(req.params.id), { is_active: false }, { is_active: true }, req);
+    await writeAuditLog(prisma, req.user.user_id, 'mappings', 'UPDATE', parseInt(req.params.id), { status_flag: 2 }, { status_flag: 0 }, req);
     return sendSuccess(res, null, 'Mapping reactivated');
   } catch (err) { next(err); }
 };
 
+const deleteMappingController = async (req, res, next) => {
+  try {
+    await mappingService.deleteMapping(parseInt(req.params.id));
+    return sendSuccess(res, null, 'Mapping deleted');
+  } catch (err) {
+    if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
+    next(err);
+  }
+};
+
 module.exports = {
   getMappingsController, getMappingByIdController, createMappingController,
-  updateMappingController, deactivateMappingController, reactivateMappingController
+  updateMappingController, deactivateMappingController, reactivateMappingController, deleteMappingController
 };

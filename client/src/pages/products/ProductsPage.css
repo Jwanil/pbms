@@ -1,0 +1,52 @@
+/* ─────────────────────────────────────────────
+   ProductsPage.css  —  Scoped styles for Products
+───────────────────────────────────────────── */
+
+/* ── Toolbar wrapper ── */
+.products-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+/* ── Search input ── */
+.products-toolbar__search {
+  width: 350px;
+  max-width: 100%;
+}
+
+/* ── Right-side filters + column selector ── */
+.products-toolbar__filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Primary "Add" button ── */
+.btn-primary-dark {
+  background: #1F3A6E !important;
+}
+
+/* ── Warning icon inside modal title ── */
+.warning-icon {
+  color: #faad14;
+  margin-right: 8px;
+}
+
+/* ── Mapping-block modal body ── */
+.products-modal-warning p {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+/* ── Secondary hint text in modal ── */
+.modal-hint-text {
+  color: #8c8c8c;
+  margin-top: 8px;
+  line-height: 1.6;
+}

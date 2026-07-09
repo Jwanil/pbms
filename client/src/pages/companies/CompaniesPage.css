@@ -1,0 +1,51 @@
+/* ─────────────────────────────────────────────
+   CompaniesPage.css  —  Scoped styles for Companies
+───────────────────────────────────────────── */
+
+/* ── Toolbar wrapper ── */
+.companies-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+/* ── Search input ── */
+.companies-toolbar__search {
+  width: 350px;
+  max-width: 100%;
+}
+
+/* ── Filter selects row ── */
+.companies-toolbar__filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Company Type filter ── */
+.companies-filter-type {
+  width: 160px;
+}
+
+/* ── Status filter ── */
+.companies-filter-status {
+  width: 120px;
+}
+
+/* ── Warning icon inside modal title ── */
+.warning-icon {
+  color: #faad14;
+  margin-right: 8px;
+}
+
+/* ── Mapping-block modal hint text ── */
+.modal-hint-text {
+  color: #8c8c8c;
+  margin-top: 8px;
+  line-height: 1.6;
+}

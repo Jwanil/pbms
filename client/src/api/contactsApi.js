@@ -14,7 +14,7 @@ export const useContacts = ({ page = 1, limit = 20, search = '', contact_type = 
       if (state) params.state = state;
       if (tags) params.tags = tags;
       if (product_id) params.product_id = product_id;
-      if (status) params.status = status;
+      if (status !== '') params.status = status;
       const res = await api.get('/contacts', { params });
       return res.data;
     },
@@ -40,9 +40,6 @@ export const useCreateContact = () => {
       message.success('Contact created successfully');
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to create contact');
-    },
   });
 };
 
@@ -53,9 +50,6 @@ export const useUpdateContact = () => {
     onSuccess: () => {
       message.success('Contact updated successfully');
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
-    },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to update contact');
     },
   });
 };
@@ -68,9 +62,6 @@ export const useDeactivateContact = () => {
       message.success('Contact deactivated');
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to deactivate');
-    },
   });
 };
 
@@ -82,8 +73,16 @@ export const useReactivateContact = () => {
       message.success('Contact reactivated');
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to reactivate');
+  });
+};
+
+export const useDeleteContact = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.delete(`/contacts/${id}`),
+    onSuccess: () => {
+      message.success('Contact deleted');
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
     },
   });
 };
@@ -105,7 +104,7 @@ export const useCompanyOptions = () => {
   return useQuery({
     queryKey: ['companies', 'options'],
     queryFn: async () => {
-      const res = await api.get('/companies', { params: { limit: 500, status: 'ACTIVE' } });
+      const res = await api.get('/companies', { params: { limit: 500, status: 0 } });
       return (res.data.data || []).map(c => ({ value: c.company_id, label: c.company_name }));
     },
   });
@@ -115,7 +114,7 @@ export const useProductOptions = () => {
   return useQuery({
     queryKey: ['products', 'options'],
     queryFn: async () => {
-      const res = await api.get('/products', { params: { limit: 500, status: 'ACTIVE' } });
+      const res = await api.get('/products', { params: { limit: 500, status: 0 } });
       return (res.data.data || []).map(p => ({ value: p.product_id, label: `${p.product_name} (${p.sku})` }));
     },
   });

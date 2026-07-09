@@ -1,0 +1,14 @@
+/* DocumentsPanel.css */
+
+.documents-panel { margin-top: 16px; }
+
+.documents-panel__upload-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.documents-panel__file-icon {
+  font-size: 24px;
+  color: #1890ff;
+}

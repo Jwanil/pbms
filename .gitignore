@@ -11,6 +11,7 @@ dist/
 # Temp files
 .tmp/
 
+
 # Logs
 *.log
 npm-debug.log*
@@ -31,3 +32,8 @@ AGENTS.md
 directives/
 reports/
 reports/
+Study/
+
+#testing
+test_companies_import.csv
+test_products_import.csv

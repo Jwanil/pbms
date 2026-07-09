@@ -1,0 +1,76 @@
+/* AppLayout.css */
+
+/* ── Root layout ── */
+.app-layout { min-height: 100vh; }
+
+/* ── Sidebar logo/brand bar ── */
+.app-sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 12px;
+  background: #1F3A6E;
+  overflow: hidden;
+}
+
+.app-sidebar-brand__text {
+  color: #fff;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+.app-sidebar-brand__text--collapsed { font-size: 18px; }
+
+/* ── Sidebar menu ── */
+.app-sidebar-menu {
+  border-right: 0;
+  margin-top: 8px;
+}
+
+/* ── Top header bar ── */
+.app-header {
+  background: #fff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f0f0f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* ── Collapse toggle button ── */
+.app-header__collapse-btn {
+  cursor: pointer;
+  font-size: 18px;
+  color: #1F3A6E;
+}
+
+/* ── User avatar + name area ── */
+.app-header__user {
+  cursor: pointer;
+}
+
+.app-header__avatar {
+  background-color: #1F3A6E !important;
+}
+
+.app-header__user-info {
+  line-height: 1.3;
+}
+
+.app-header__user-role {
+  font-size: 11px;
+  display: block;
+  line-height: 1;
+}
+
+.app-header__chevron { font-size: 11px; }
+
+/* ── Main content area ── */
+.app-content {
+  padding: 24px;
+  overflow: auto;
+}

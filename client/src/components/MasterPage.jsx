@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import '../pages/masters/Masters.css';
 import { Button, Form, Input, InputNumber, Space, Popconfirm, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -56,9 +57,7 @@ function MasterPage({
         onSuccess: () => setModalOpen(false),
         onError: (err) => {
           applyServerErrors(err);
-          if (!err?.response?.data?.errors?.length) {
-            message.error(err?.response?.data?.message || 'Failed to update record');
-          }
+          
         }
       });
     } else {
@@ -66,9 +65,7 @@ function MasterPage({
         onSuccess: () => setModalOpen(false),
         onError: (err) => {
           applyServerErrors(err);
-          if (!err?.response?.data?.errors?.length) {
-            message.error(err?.response?.data?.message || 'Failed to add record');
-          }
+          
         }
       });
     }
@@ -122,6 +119,25 @@ function MasterPage({
     },
   ];
 
+  const [searchText, setSearchText] = useState('');
+
+  // Client-side search filtering (since Masters usually fetch all data at once)
+  const filteredData = data.filter(record => {
+    if (!searchText) return true;
+    const lowerSearch = debouncedSearch.toLowerCase();
+    
+    // Check the primary name field (e.g., category_name)
+    if (record[nameField]?.toString().toLowerCase().includes(lowerSearch)) return true;
+    
+    // Check any extra fields if they exist
+    if (extraFields) {
+      for (const f of extraFields) {
+        if (record[f.name]?.toString().toLowerCase().includes(lowerSearch)) return true;
+      }
+    }
+    return false;
+  });
+
   return (
     <div>
       <PageHeader
@@ -135,7 +151,7 @@ function MasterPage({
               <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>
             </PermissionGuard>
             <PermissionGuard module={module} action="can_create">
-              <Button type="primary" icon={<PlusOutlined />} onClick={openAdd} style={{ background: '#1F3A6E' }}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={openAdd} className="btn-primary-dark">
                 Add {title.replace(' Master', '')}
               </Button>
             </PermissionGuard>
@@ -145,13 +161,16 @@ function MasterPage({
 
       <DataTable
         columns={columns}
-        dataSource={data}
+        dataSource={filteredData}
         loading={isLoading}
         rowKey={rowKey}
-        total={data.length}
+        total={filteredData.length}
         searchPlaceholder={`Search ${title.toLowerCase()}...`}
-        onSearch={() => {}}
+        onSearch={setSearchText}
       />
+
+
+
 
       <FormModal
         open={modalOpen}
@@ -186,7 +205,7 @@ function MasterPage({
             rules={f.rules || [{ required: true }]}
           >
             {f.type === 'number'
-              ? <InputNumber style={{ width: '100%' }} placeholder={`Enter ${f.label.toLowerCase()}`} min={0} />
+              ? <InputNumber className="masters-input-full" placeholder={`Enter ${f.label.toLowerCase()}`} min={0} />
               : <Input placeholder={`Enter ${f.label.toLowerCase()}`} />
             }
           </Form.Item>

@@ -33,6 +33,7 @@ const contactSchema = z.object({
   preferred_language: z.enum(['ENGLISH', 'HINDI', 'REGIONAL']).optional().nullable(),
   tags: z.preprocess((val) => Array.isArray(val) ? JSON.stringify(val) : val, z.string().max(1000, 'Tags string too long').optional().nullable()),
   product_ids: z.array(z.number().int().positive()).optional().default([]),
+  status_flag: z.number().int().min(0).max(2).optional(),
 }).refine(
   (data) => {
     if (data.mobile && data.alternate_mobile) {
@@ -119,7 +120,7 @@ const updateContactController = async (req, res, next) => {
 const deactivateContactController = async (req, res, next) => {
   try {
     await contactService.deactivateContact(parseInt(req.params.id));
-    await writeAuditLog(prisma, req.user.user_id, 'contacts', 'DELETE', parseInt(req.params.id), null, { status: 'INACTIVE' }, req);
+    await writeAuditLog(prisma, req.user.user_id, 'contacts', 'DELETE', parseInt(req.params.id), null, { status_flag: 2 }, req);
     return sendSuccess(res, null, 'Contact deactivated');
   } catch (err) {
     if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
@@ -130,9 +131,19 @@ const deactivateContactController = async (req, res, next) => {
 const reactivateContactController = async (req, res, next) => {
   try {
     await contactService.reactivateContact(parseInt(req.params.id));
-    await writeAuditLog(prisma, req.user.user_id, 'contacts', 'UPDATE', parseInt(req.params.id), { status: 'INACTIVE' }, { status: 'ACTIVE' }, req);
+    await writeAuditLog(prisma, req.user.user_id, 'contacts', 'UPDATE', parseInt(req.params.id), { status_flag: 2 }, { status_flag: 0 }, req);
     return sendSuccess(res, null, 'Contact reactivated');
   } catch (err) { next(err); }
+};
+
+const deleteContactController = async (req, res, next) => {
+  try {
+    await contactService.deleteContact(parseInt(req.params.id));
+    return sendSuccess(res, null, 'Contact deleted');
+  } catch (err) {
+    if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
+    next(err);
+  }
 };
 
 const getBranchesController = async (req, res, next) => {
@@ -147,7 +158,7 @@ const Papa = require('papaparse');
 const exportContactsController = async (req, res, next) => {
   try {
     const contacts = await prisma.contact.findMany({
-      where: { status: 'ACTIVE' },
+      where: { status_flag: 0 },
       select: {
         first_name: true,
         last_name: true,
@@ -158,7 +169,7 @@ const exportContactsController = async (req, res, next) => {
         designation: true,
         preferred_language: true,
         tags: true,
-        status: true,
+        status_flag: true,
         company: { select: { company_name: true } },
         branch: { select: { branch_name: true } }
       }
@@ -176,7 +187,7 @@ const exportContactsController = async (req, res, next) => {
       tags: c.tags,
       company_name: c.company?.company_name || '',
       branch_name: c.branch?.branch_name || '',
-      status: c.status
+      status_flag: c.status_flag
     }));
 
     const csvString = Papa.unparse(flatContacts);
@@ -362,7 +373,7 @@ const importJsonController = async (req, res, next) => {
 
 module.exports = {
   getContactsController, getContactByIdController, createContactController,
-  updateContactController, deactivateContactController, reactivateContactController,
+  updateContactController, deactivateContactController, reactivateContactController, deleteContactController,
   getBranchesController, exportContactsController, sampleCsvContactsController,
   importContactsController, checkDuplicatesController, importJsonController
 };

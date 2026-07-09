@@ -67,7 +67,7 @@ const getUserByIdController = async (req, res, next) => {
     const user = await userService.getUserById(parseInt(req.params.id));
     return sendSuccess(res, user, 'User fetched');
   } catch (err) {
-    if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
+    if (err.statusCode) return sendError(res, err.message, err.statusCode, err.errors || [], err.code);
     next(err);
   }
 };
@@ -85,7 +85,7 @@ const createUserController = async (req, res, next) => {
     await writeAuditLog(prisma, req.user.user_id, 'users', 'CREATE', user.user_id, null, { name: user.name, email: user.email }, req);
     return sendSuccess(res, user, 'User created successfully', 201);
   } catch (err) {
-    if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
+    if (err.statusCode) return sendError(res, err.message, err.statusCode, err.errors || [], err.code);
     next(err);
   }
 };
@@ -104,7 +104,7 @@ const updateUserController = async (req, res, next) => {
     await writeAuditLog(prisma, req.user.user_id, 'users', 'UPDATE', user.user_id, oldUser, user, req);
     return sendSuccess(res, user, 'User updated successfully');
   } catch (err) {
-    if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
+    if (err.statusCode) return sendError(res, err.message, err.statusCode, err.errors || [], err.code);
     next(err);
   }
 };
@@ -115,7 +115,7 @@ const deactivateUserController = async (req, res, next) => {
     await writeAuditLog(prisma, req.user.user_id, 'users', 'DELETE', parseInt(req.params.id), null, { status: 'INACTIVE' }, req);
     return sendSuccess(res, null, 'User deactivated successfully');
   } catch (err) {
-    if (err.statusCode) return sendError(res, err.message, err.statusCode, [], err.code);
+    if (err.statusCode) return sendError(res, err.message, err.statusCode, err.errors || [], err.code);
     next(err);
   }
 };

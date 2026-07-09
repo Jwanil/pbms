@@ -1,4 +1,11 @@
 company_name,company_type,email,phone,gst_number,pan_number,cin_number,website,industry_type,address,remarks
-Global Pharma Corp,MANUFACTURER,contact@globalpharma.com,1234567890,22AAAAA0000A1Z1,AAAAA1111A,L24230GJ1995PLC123456,www.globalpharma.com,Pharmaceuticals,"45 Industrial Area, Ahmedabad",Major supplier of APIs
-Reliance Solvents Ltd,SUPPLIER,sales@reliancesolvents.com,9876543211,27BBBBB0000B1Z2,BBBBB2222B,U24110MH2001PLC654321,www.reliancesolvents.com,Petrochemicals,"Andheri East, Mumbai",High volume solvent distributor
-Sunrise Agrochemicals,BUYER,procurement@sunriseagro.in,8765432109,24CCCCC0000C1Z3,CCCCC3333C,,,Agriculture,"Phase 4, GIDC Vapi",Needs raw materials in bulk
+Sharma Chemicals Pvt Ltd,MANUFACTURER,info@sharma.com,9876543210,22AAAAA0000A1Z5,ABCDE1234F,U24100MH2010PTC123456,https://sharma.com,Chemical Manufacturing,"123 MIDC Pune",Key supplier
+Mehta Pharma Industries,MANUFACTURER,contact@mehtapharma.in,9812345678,27BBBBB1111B1Z3,FGHIJ5678K,U24200GJ2015PTC789012,https://mehtapharma.in,Pharmaceutical Manufacturing,"456 GIDC Ahmedabad",Bulk drug supplier
+Patel Trading Co.,SUPPLIER,sales@pateltrading.com,9723456789,24CCCCC2222C1Z1,KLMNO9012P,,https://pateltrading.com,Chemical Trading,"789 Chemical Market Mumbai",Solvent supplier
+Gupta Distributors,DISTRIBUTOR,info@guptadist.com,9634567890,09DDDDD3333D1Z9,QRSTU3456V,,,Chemical Distribution,"101 Industrial Area Delhi",North India distributor
+Rajesh Polymers Ltd,MANUFACTURER,rajesh@rajeshpolymers.com,9545678901,27EEEEE4444E1Z7,WXYZ7890A,U25200MH2018PTC345678,https://rajeshpolymers.com,Polymer Manufacturing,"202 Taloja MIDC Navi Mumbai",Polymer resin manufacturer
+Agarwal Chemicals,BUYER,purchase@agarwalchem.com,9456789012,33FFFFF5555F1Z5,BCDEF1234G,,,Chemical Buyer,"303 Chemical Complex Kolkata",Eastern region buyer
+Singh Enterprises,SUPPLIER,order@singhent.com,9367890123,06GGGGG6666G1Z3,HIJKL5678M,,,Chemical Supply,"404 Phase-V Industrial Area Mohali",Punjab based supplier
+Verma Solvents Pvt Ltd,MANUFACTURER,admin@vermasolvents.com,9278901234,23HHHHH7777H1Z1,NOPQR9012S,U24110RJ2020PTC567890,https://vermasolvents.com,Solvent Manufacturing,"505 RIICO Industrial Area Jaipur",Specialty solvents manufacturer
+Desai Brothers Trading,DISTRIBUTOR,trade@desaibros.com,9189012345,24IIIII8888I1Z9,TUVWX3456Y,,,Chemical Distribution,"606 GIDC Vapi Gujarat",Western India distributor
+Agarwal Chemicals,BUYER,duplicate@agarwalchem.com,9999999999,33ZZZZZ0000Z1Z5,ZZZZ1234G,,,Chemical Buyer,"Duplicate row within CSV",This is a duplicate entry within CSV

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import './UsersPage.css';
 import { Button, Form, Input, Select, Space, Tag, Tooltip, Modal } from 'antd';
 import { PlusOutlined, EditOutlined, StopOutlined, CheckOutlined, SafetyOutlined, KeyOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
@@ -15,10 +16,12 @@ import {
 import useFormErrors from '../../hooks/useFormErrors';
 import useAuthStore from '../../store/authStore';
 import { message } from 'antd';
+import useDebounce  from '../../hooks/useDebounce';
 
 function UsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500); 
   const [statusFilter, setStatusFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -31,7 +34,7 @@ function UsersPage() {
 
   const { user } = useAuthStore();
 
-  const { data, isLoading } = useUsers({ page, limit: 20, search, status: statusFilter });
+  const { data, isLoading } = useUsers({ page, limit: 20, search: debouncedSearch, status: statusFilter });
   const { data: formData } = useUserFormData();
   const { mutate: createUser, isPending: isCreating } = useCreateUser();
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
@@ -62,9 +65,7 @@ function UsersPage() {
         onSuccess: () => setModalOpen(false),
         onError: (err) => {
           applyServerErrors(err);
-          if (!err?.response?.data?.errors?.length) {
-            message.error(err?.response?.data?.message || 'Failed to update user');
-          }
+          
         }
       });
     } else {
@@ -72,9 +73,7 @@ function UsersPage() {
         onSuccess: () => setModalOpen(false),
         onError: (err) => {
           applyServerErrors(err);
-          if (!err?.response?.data?.errors?.length) {
-            message.error(err?.response?.data?.message || 'Failed to create user');
-          }
+          
         }
       });
     }
@@ -162,7 +161,7 @@ function UsersPage() {
     <Select
       placeholder="Filter by status"
       allowClear
-      style={{ width: 160 }}
+      className="users-filter-status"
       onChange={handleStatusFilter}
       options={[{ label: 'Active', value: 'ACTIVE' }, { label: 'Inactive', value: 'INACTIVE' }]}
     />
@@ -176,7 +175,7 @@ function UsersPage() {
         breadcrumbs={['Admin', 'Users']}
         extra={
           <PermissionGuard module="users" action="can_create">
-            <Button type="primary" icon={<PlusOutlined />} onClick={openAdd} style={{ background: '#1F3A6E' }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openAdd} className="btn-primary-dark">
               Add User
             </Button>
           </PermissionGuard>
@@ -207,7 +206,7 @@ function UsersPage() {
           <Input placeholder="Enter full name" />
         </Form.Item>
         <Form.Item name="email" label="Email" rules={[{ required: true }, { type: 'email', message: 'Invalid email format' }]}>
-          <Input placeholder="Enter email address" />
+          <Input placeholder="Enter email address" autoComplete="off" />
         </Form.Item>
         <Form.Item name="username" label="Username" rules={[
           { required: true },
@@ -215,7 +214,7 @@ function UsersPage() {
           { max: 50, message: 'Cannot exceed 50 characters' },
           { pattern: /^[a-zA-Z0-9_\.]+$/, message: 'Only letters, numbers, _ and . allowed' }
         ]}>
-          <Input placeholder="Enter username" />
+          <Input placeholder="Enter username" autoComplete="off" />
         </Form.Item>
         {!editingUser && (
           <Form.Item name="password" label="Password" rules={[
@@ -226,7 +225,7 @@ function UsersPage() {
             { pattern: /[0-9]/, message: 'Must contain a number' },
             { pattern: /[^A-Za-z0-9]/, message: 'Must contain a special character' },
           ]}>
-            <Input.Password placeholder="Minimum 8 characters" />
+            <Input.Password placeholder="Minimum 8 characters" autoComplete="new-password" />
           </Form.Item>
         )}
         <Form.Item name="mobile" label="Mobile" rules={[{ pattern: /^[0-9]{10,15}$/, message: 'Must be 10-15 digits' }]}>

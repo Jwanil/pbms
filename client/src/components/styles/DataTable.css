@@ -1,0 +1,11 @@
+/* DataTable.css */
+
+.data-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.data-table-search { width: 300px; max-width: 100%; }

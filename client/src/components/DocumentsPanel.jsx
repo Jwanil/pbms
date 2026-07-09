@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './styles/DocumentsPanel.css';
 import { Upload, Button, List, Typography, Space, Popconfirm } from 'antd';
 import { UploadOutlined, FileOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useDocuments, useUploadDocument, useDeleteDocument } from '../api/documentsApi';
@@ -42,9 +43,9 @@ export default function DocumentsPanel({ entityType, entityId, canUpload = true 
   };
 
   return (
-    <div style={{ marginTop: 16 }}>
+    <div className="documents-panel">
       {canUpload && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div className="documents-panel__upload-row">
           <Upload {...uploadProps}>
             <Button icon={<UploadOutlined />}>Select File (Max 5MB)</Button>
           </Upload>
@@ -77,7 +78,7 @@ export default function DocumentsPanel({ entityType, entityId, canUpload = true 
             ] : []}
           >
             <List.Item.Meta
-              avatar={<FileOutlined style={{ fontSize: 24, color: '#1890ff' }} />}
+              avatar={<FileOutlined className="documents-panel__file-icon" />}
               title={<a href={`${API_BASE_URL}${item.file_url}`} target="_blank" rel="noreferrer">{item.file_name}</a>}
               description={`Uploaded by ${item.uploader?.name || 'Unknown'} on ${new Date(item.uploaded_at).toLocaleDateString()}`}
             />

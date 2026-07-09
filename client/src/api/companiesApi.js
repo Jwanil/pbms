@@ -2,17 +2,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { message } from 'antd';
 import api from './axiosInstance';
 
-export const useCompanies = ({ page = 1, limit = 20, search = '', company_type = '', status = '' }) => {
+export const useCompanies = ({ page = 1, limit = 20, search = '', company_type = '', status = '', enabled = true }) => {
   return useQuery({
     queryKey: ['companies', page, limit, search, company_type, status],
     queryFn: async () => {
       const params = { page, limit };
       if (search) params.search = search;
       if (company_type) params.company_type = company_type;
-      if (status) params.status = status;
+      if (status != '') params.status = status;
       const res = await api.get('/companies', { params });
       return res.data;
     },
+    enabled,
   });
 };
 
@@ -35,9 +36,6 @@ export const useCreateCompany = () => {
       message.success('Company created successfully');
       queryClient.invalidateQueries({ queryKey: ['companies'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to create company');
-    },
   });
 };
 
@@ -48,9 +46,6 @@ export const useUpdateCompany = () => {
     onSuccess: () => {
       message.success('Company updated successfully');
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-    },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to update company');
     },
   });
 };
@@ -63,9 +58,6 @@ export const useDeactivateCompany = () => {
       message.success('Company deactivated');
       queryClient.invalidateQueries({ queryKey: ['companies'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to deactivate');
-    },
   });
 };
 
@@ -77,8 +69,16 @@ export const useReactivateCompany = () => {
       message.success('Company reactivated');
       queryClient.invalidateQueries({ queryKey: ['companies'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to reactivate');
+  });
+};
+
+export const useDeleteCompany = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.delete(`/companies/${id}`),
+    onSuccess: () => {
+      message.success('Company deleted');
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
     },
   });
 };

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import './ContactsPage.css';
 import { Table, Button, Space, Input, Select, Tag, Form, Tabs, Popconfirm, Row, Col } from 'antd';
-import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined, UploadOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, StopOutlined, CheckCircleOutlined, SearchOutlined, EyeOutlined, UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import PageHeader from '../../components/PageHeader';
 import FormModal from '../../components/FormModal';
@@ -13,13 +14,13 @@ import BulkImportModal from '../../components/BulkImportModal';
 import {
   useContacts, useContact,
   useCreateContact, useUpdateContact,
-  useDeactivateContact, useReactivateContact,
+  useDeactivateContact, useReactivateContact, useDeleteContact,
   useCompanyOptions, useProductOptions, useBranchesByCompany
 } from '../../api/contactsApi';
 import useFormErrors from '../../hooks/useFormErrors';
 import useColumnVisibility from '../../hooks/useColumnVisibility';
 import { message } from 'antd';
-
+import useDebounce  from '../../hooks/useDebounce';
 const CONTACT_TYPES = [
   { value: 'BUYER', label: 'Buyer', color: 'orange' },
   { value: 'PURCHASE_MANAGER', label: 'Purchase Manager', color: 'blue' },
@@ -38,6 +39,7 @@ function ContactsPage() {
   const [form] = Form.useForm();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [filterType, setFilterType] = useState('');
   const [filterLang, setFilterLang] = useState('');
   const [filterProduct, setFilterProduct] = useState('');
@@ -47,9 +49,10 @@ function ContactsPage() {
   const [editingId, setEditingId] = useState(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
   const [viewId, setViewId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const { data: listData, isLoading } = useContacts({
-    page, search, contact_type: filterType, preferred_language: filterLang,
+    page, search: debouncedSearch, contact_type: filterType, preferred_language: filterLang,
     product_id: filterProduct, status: filterStatus
   });
   const { data: editData } = useContact(editingId);
@@ -60,6 +63,7 @@ function ContactsPage() {
   const { mutate: update, isPending: updating } = useUpdateContact();
   const { mutate: deactivate } = useDeactivateContact();
   const { mutate: reactivate } = useReactivateContact();
+  const { mutate: deleteContact } = useDeleteContact();
   const { applyServerErrors } = useFormErrors(form);
 
   useEffect(() => {
@@ -75,6 +79,7 @@ function ContactsPage() {
     setEditingId(null);
     setSelectedCompanyId(null);
     form.resetFields();
+    form.setFieldsValue({ status_flag: 0 });
     setModalOpen(true);
   }, [form]);
 
@@ -89,9 +94,7 @@ function ContactsPage() {
         onSuccess: () => { setModalOpen(false); setEditingId(null); setSelectedCompanyId(null); },
         onError: (err) => {
           applyServerErrors(err);
-          if (!err?.response?.data?.errors?.length) {
-            message.error(err?.response?.data?.message || 'Failed to update contact');
-          }
+          
         }
       });
     } else {
@@ -99,9 +102,7 @@ function ContactsPage() {
         onSuccess: () => { setModalOpen(false); setSelectedCompanyId(null); },
         onError: (err) => {
           applyServerErrors(err);
-          if (!err?.response?.data?.errors?.length) {
-            message.error(err?.response?.data?.message || 'Failed to create contact');
-          }
+          
         }
       });
     }
@@ -115,6 +116,14 @@ function ContactsPage() {
     setSelectedCompanyId(companyId || null);
     form.setFieldValue('branch_id', null);
   }, [form]);
+
+  const handleDeleteConfirm = useCallback(() => {
+    if (!deleteTarget) return;
+    deleteContact(deleteTarget.contact_id, {
+      onSuccess: () => setDeleteTarget(null),
+      onError: () => setDeleteTarget(null),
+    });
+  }, [deleteContact, deleteTarget]);
 
   const handleSearch = useCallback((v) => { setSearch(v); setPage(1); }, []);
   const handleTypeFilter = useCallback((v) => { setFilterType(v || ''); setPage(1); }, []);
@@ -145,7 +154,38 @@ function ContactsPage() {
       }
     },
     { title: 'Interests', key: 'interests', width: 80, align: 'center', render: (_, r) => r._count?.interests || 0 },
-    { title: 'Status', key: 'status', width: 100, render: (_, r) => <StatusBadge status={r.status} /> },
+    {
+      title: 'Status', key: 'status', width: 130,
+      render: (_, record) => {
+        const isActive = record.status_flag === 0;
+        const isInactive = record.status_flag === 2;
+        const actionLabel = isActive ? 'Deactivate' : isInactive ? 'Reactivate' : null;
+
+        // If status is "deleted" (1), just show badge, no click
+        if (!actionLabel) return <StatusBadge status={record.status_flag} />;
+
+        return (
+          <PermissionGuard module="contacts" action="can_edit">
+            <Popconfirm
+              title={`${actionLabel} this contact?`}
+              description={`Contact will be set to ${isActive ? 'INACTIVE' : 'ACTIVE'}.`}
+              onConfirm={() =>
+                isActive
+                  ? deactivate(record.contact_id, { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contacts'] }) })
+                  : reactivate(record.contact_id, { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contacts'] }) })
+              }
+              okText={actionLabel}
+              okType={isActive ? 'danger' : 'primary'}
+              cancelText="Cancel"
+            >
+              <span style={{ cursor: 'pointer' }}>
+                <StatusBadge status={record.status_flag} />
+              </span>
+            </Popconfirm>
+          </PermissionGuard>
+        );
+      }
+    },
     {
       title: 'Actions', key: 'actions', width: 200,
       render: (_, record) => (
@@ -157,18 +197,14 @@ function ContactsPage() {
             <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Edit</Button>
           </PermissionGuard>
           <PermissionGuard module="contacts" action="can_delete">
-            {record.status === 'ACTIVE' ? (
-              <Popconfirm title="Deactivate this contact?" onConfirm={() => deactivate(record.contact_id)}>
-                <Button size="small" danger icon={<StopOutlined />}>Deactivate</Button>
-              </Popconfirm>
-            ) : (
-              <Button size="small" icon={<CheckCircleOutlined />} onClick={() => reactivate(record.contact_id)}>Reactivate</Button>
-            )}
+            <Button size="small" danger icon={<DeleteOutlined />} onClick={() => setDeleteTarget(record)}>
+              Delete
+            </Button>
           </PermissionGuard>
         </Space>
       ),
     },
-  ], [handleEdit, deactivate, reactivate]);
+  ], [handleEdit, deactivate, reactivate, queryClient]);
 
   const { visibleColumns, toggleColumn, hiddenKeys } = useColumnVisibility(allColumns, []);
 
@@ -219,6 +255,16 @@ function ContactsPage() {
           <Col span={12}>
             <Form.Item name="preferred_language" label="Preferred Language">
               <Select allowClear options={LANGUAGES} />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="status_flag" label="Status" rules={[{ required: true }]}>
+              <Select
+                options={[
+                  { value: 0, label: 'Active' },
+                  { value: 2, label: 'Inactive' },
+                ]}
+              />
             </Form.Item>
           </Col>
         </Row>
@@ -286,7 +332,7 @@ function ContactsPage() {
               <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>
             </PermissionGuard>
             <PermissionGuard module="contacts" action="can_create">
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: '#1F3A6E' }}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} className="btn-primary-dark">
                 Add Contact
               </Button>
             </PermissionGuard>
@@ -294,30 +340,33 @@ function ContactsPage() {
         }
       />
 
-      <Space style={{ marginBottom: 16 }} wrap>
+      <div className="contacts-toolbar">
         <Input.Search
           placeholder="Search by name, mobile, or email..."
-          allowClear onSearch={handleSearch}
-          style={{ width: 280 }} prefix={<SearchOutlined />}
+          allowClear
+          onChange={(e) => handleSearch(e.target.value)}
+          onSearch={handleSearch}
+          className="contacts-toolbar__search"
+          prefix={<SearchOutlined />}
         />
-        <Select placeholder="Contact Type" allowClear style={{ width: 170 }}
+        <Select placeholder="Contact Type" allowClear className="contacts-filter-type"
           value={filterType || undefined} onChange={handleTypeFilter}
           options={CONTACT_TYPES}
         />
-        <Select placeholder="Language" allowClear style={{ width: 130 }}
+        <Select placeholder="Language" allowClear className="contacts-filter-lang"
           value={filterLang || undefined} onChange={handleLangFilter}
           options={LANGUAGES}
         />
-        <Select placeholder="Product Interest" allowClear showSearch optionFilterProp="label" style={{ width: 200 }}
+        <Select placeholder="Product Interest" allowClear showSearch optionFilterProp="label" className="contacts-filter-product"
           value={filterProduct || undefined} onChange={handleProductFilter}
           options={productOptions || []}
         />
-        <Select placeholder="Status" allowClear style={{ width: 120 }}
-          value={filterStatus || undefined} onChange={handleStatusFilter}
-          options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'INACTIVE', label: 'Inactive' }]}
+        <Select placeholder="Status" allowClear className="contacts-filter-status"
+          value={filterStatus === '' ? undefined : filterStatus} onChange={handleStatusFilter}
+          options={[{ value: 0, label: 'Active' }, { value: 2, label: 'Inactive' }]}
         />
         <ColumnSelector columns={allColumns} hiddenKeys={hiddenKeys} onToggle={toggleColumn} />
-      </Space>
+      </div>
 
       <Table
         columns={visibleColumns} dataSource={listData?.data || []}
@@ -345,6 +394,24 @@ function ContactsPage() {
         moduleName="Contacts"
         onImportSuccess={handleImportSuccess}
       />
+
+      {/* Delete Confirmation Modal */}
+      {/* Reusing Modal directly or wrapping it similarly */}
+      <FormModal
+        open={!!deleteTarget}
+        title="Permanently delete this contact?"
+        onClose={() => setDeleteTarget(null)}
+        onSubmit={handleDeleteConfirm}
+        okText="Delete"
+        okType="danger"
+      >
+        {deleteTarget && (
+          <p>
+            <strong>&quot;{deleteTarget.first_name} {deleteTarget.last_name || ''}&quot;</strong> will be permanently removed.
+            This action cannot be undone.
+          </p>
+        )}
+      </FormModal>
     </div>
   );
 }

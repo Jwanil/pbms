@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { message } from 'antd';
 import api from './axiosInstance';
 
-export const useProducts = ({ page = 1, limit = 20, search = '', category_id = '', grade_id = '', status = '' }) => {
+export const useProducts = ({ page = 1, limit = 20, search = '', category_id = '', grade_id = '', status = '', enabled = true }) => {
   return useQuery({
     queryKey: ['products', page, limit, search, category_id, grade_id, status],
     queryFn: async () => {
@@ -10,10 +10,11 @@ export const useProducts = ({ page = 1, limit = 20, search = '', category_id = '
       if (search) params.search = search;
       if (category_id) params.category_id = category_id;
       if (grade_id) params.grade_id = grade_id;
-      if (status) params.status = status;
+      if (status !== '') params.status = status;
       const res = await api.get('/products', { params });
       return res.data; // { success, data: [...], pagination: {...} }
     },
+    enabled,
   });
 };
 
@@ -46,9 +47,6 @@ export const useCreateProduct = () => {
       message.success('Product created successfully');
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to create product');
-    },
   });
 };
 
@@ -59,9 +57,6 @@ export const useUpdateProduct = () => {
     onSuccess: () => {
       message.success('Product updated successfully');
       queryClient.invalidateQueries({ queryKey: ['products'] });
-    },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to update product');
     },
   });
 };
@@ -74,9 +69,6 @@ export const useDeactivateProduct = () => {
       message.success('Product deactivated');
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to deactivate product');
-    },
   });
 };
 
@@ -88,8 +80,16 @@ export const useReactivateProduct = () => {
       message.success('Product reactivated');
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    onError: (err) => {
-      message.error(err?.response?.data?.message || 'Failed to reactivate product');
+  });
+};
+
+export const useDeleteProduct = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.delete(`/products/${id}`),
+    onSuccess: () => {
+      message.success('Product deleted');
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
 };

@@ -1,0 +1,41 @@
+/* ──────────────────────────────────────────────────
+   LocationsPage.css  —  Scoped styles for Locations
+────────────────────────────────────────────────── */
+
+/* ── Toolbar row for Countries / States / Cities tabs ── */
+.locations-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+/* ── Toolbar left side ── */
+.locations-toolbar__left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Search inputs ── */
+.locations-search { width: 280px; max-width: 100%; }
+
+/* ── Filter selects ── */
+.locations-filter-active   { width: 160px; }
+.locations-filter-country  { width: 200px; }
+.locations-filter-state    { width: 180px; }
+.locations-filter-country-sm { width: 180px; }
+
+/* ── Tab icon spacing ── */
+.locations-tab-icon {
+  margin-right: 6px;
+}
+
+/* ── Country code input: auto-uppercase ── */
+.locations-country-code-input {
+  text-transform: uppercase;
+}

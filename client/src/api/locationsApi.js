@@ -18,7 +18,6 @@ export const useCreateCountry = () => {
   return useMutation({
     mutationFn: (data) => api.post('/locations/countries', data),
     onSuccess: () => { message.success('Country created'); qc.invalidateQueries({ queryKey: ['locations', 'countries'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to create country'),
   });
 };
 
@@ -27,7 +26,6 @@ export const useUpdateCountry = () => {
   return useMutation({
     mutationFn: ({ id, data }) => api.put(`/locations/countries/${id}`, data),
     onSuccess: () => { message.success('Country updated'); qc.invalidateQueries({ queryKey: ['locations', 'countries'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to update country'),
   });
 };
 
@@ -36,7 +34,6 @@ export const useDeactivateCountry = () => {
   return useMutation({
     mutationFn: (id) => api.patch(`/locations/countries/${id}/deactivate`),
     onSuccess: () => { message.success('Country deactivated'); qc.invalidateQueries({ queryKey: ['locations'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to deactivate'),
   });
 };
 
@@ -45,7 +42,6 @@ export const useReactivateCountry = () => {
   return useMutation({
     mutationFn: (id) => api.patch(`/locations/countries/${id}/reactivate`),
     onSuccess: () => { message.success('Country reactivated'); qc.invalidateQueries({ queryKey: ['locations'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to reactivate'),
   });
 };
 
@@ -69,7 +65,6 @@ export const useCreateState = () => {
   return useMutation({
     mutationFn: (data) => api.post('/locations/states', data),
     onSuccess: () => { message.success('State created'); qc.invalidateQueries({ queryKey: ['locations', 'states'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to create state'),
   });
 };
 
@@ -78,7 +73,6 @@ export const useUpdateState = () => {
   return useMutation({
     mutationFn: ({ id, data }) => api.put(`/locations/states/${id}`, data),
     onSuccess: () => { message.success('State updated'); qc.invalidateQueries({ queryKey: ['locations', 'states'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to update state'),
   });
 };
 
@@ -87,7 +81,6 @@ export const useDeactivateState = () => {
   return useMutation({
     mutationFn: (id) => api.patch(`/locations/states/${id}/deactivate`),
     onSuccess: () => { message.success('State deactivated'); qc.invalidateQueries({ queryKey: ['locations'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to deactivate'),
   });
 };
 
@@ -96,7 +89,6 @@ export const useReactivateState = () => {
   return useMutation({
     mutationFn: (id) => api.patch(`/locations/states/${id}/reactivate`),
     onSuccess: () => { message.success('State reactivated'); qc.invalidateQueries({ queryKey: ['locations'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to reactivate'),
   });
 };
 
@@ -120,7 +112,6 @@ export const useCreateCity = () => {
   return useMutation({
     mutationFn: (data) => api.post('/locations/cities', data),
     onSuccess: () => { message.success('City created'); qc.invalidateQueries({ queryKey: ['locations', 'cities'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to create city'),
   });
 };
 
@@ -129,7 +120,6 @@ export const useUpdateCity = () => {
   return useMutation({
     mutationFn: ({ id, data }) => api.put(`/locations/cities/${id}`, data),
     onSuccess: () => { message.success('City updated'); qc.invalidateQueries({ queryKey: ['locations', 'cities'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to update city'),
   });
 };
 
@@ -138,7 +128,6 @@ export const useDeactivateCity = () => {
   return useMutation({
     mutationFn: (id) => api.patch(`/locations/cities/${id}/deactivate`),
     onSuccess: () => { message.success('City deactivated'); qc.invalidateQueries({ queryKey: ['locations'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to deactivate'),
   });
 };
 
@@ -147,6 +136,5 @@ export const useReactivateCity = () => {
   return useMutation({
     mutationFn: (id) => api.patch(`/locations/cities/${id}/reactivate`),
     onSuccess: () => { message.success('City reactivated'); qc.invalidateQueries({ queryKey: ['locations'] }); },
-    onError: (e) => message.error(e?.response?.data?.message || 'Failed to reactivate'),
   });
 };
