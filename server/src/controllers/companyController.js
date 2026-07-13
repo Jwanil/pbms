@@ -211,7 +211,7 @@ const Papa = require('papaparse');
 const exportCompaniesController = async (req, res, next) => {
   try {
     const companies = await prisma.company.findMany({
-      where: { status: 'ACTIVE' },
+      where: { status_flag: 0 },
       select: {
         company_name: true,
         company_type: true,

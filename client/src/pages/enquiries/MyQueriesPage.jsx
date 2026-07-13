@@ -8,14 +8,7 @@ import dayjs from 'dayjs';
 
 const { Title } = Typography;
 
-const MODULE_COLORS = {
-  PRODUCT:    'blue',
-  COMPANY:    'purple',
-  MAPPING:    'cyan',
-  PERMISSION: 'orange',
-  ROLE:       'magenta',
-  MASTERS:    'green',
-};
+import { MODULE_COLORS } from '../../utils/constants';
 
 export default function MyQueriesPage() {
   const navigate = useNavigate();

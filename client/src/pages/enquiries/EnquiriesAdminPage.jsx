@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import './Enquiries.css';
 import { useNavigate } from 'react-router-dom';
-import { Table, Select, Tag, Space, Button, Input, Modal, Typography, Divider } from 'antd';
+import { Table, Tag, Button, Space, Input, Select, Modal, Input as AntInput, Typography, Divider, Tooltip } from 'antd';
 import { CheckCircleOutlined, SyncOutlined, MessageOutlined, EyeOutlined, SafetyOutlined } from '@ant-design/icons';
 import PageHeader from '../../components/PageHeader';
 import StatusBadge from '../../components/StatusBadge';
@@ -22,40 +22,7 @@ import useDebounce  from '../../hooks/useDebounce';
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const MODULE_LABELS = {
-  PRODUCT:    'Product',
-  COMPANY:    'Company',
-  MAPPING:    'Mapping',
-  PERMISSION: 'Permissions',
-  ROLE:       'Roles',
-  MASTERS:    'Masters',
-};
-
-const MODULE_COLORS = {
-  PRODUCT:    'blue',
-  COMPANY:    'purple',
-  MAPPING:    'cyan',
-  PERMISSION: 'orange',
-  ROLE:       'red',
-  MASTERS:    'green',
-};
-
-const STATUS_FILTER_OPTIONS = [
-  { value: '',            label: 'All Statuses' },
-  { value: 'OPEN',        label: 'Open' },
-  { value: 'IN_PROGRESS', label: 'In Progress' },
-  { value: 'RESOLVED',    label: 'Resolved' },
-];
-
-const MODULE_FILTER_OPTIONS = [
-  { value: '',           label: 'All Modules' },
-  { value: 'PRODUCT',    label: 'Product' },
-  { value: 'COMPANY',    label: 'Company' },
-  { value: 'MAPPING',    label: 'Mapping' },
-  { value: 'PERMISSION', label: 'Permissions' },
-  { value: 'ROLE',       label: 'Roles' },
-  { value: 'MASTERS',    label: 'Masters' },
-];
+import { MODULE_LABELS, MODULE_COLORS, STATUS_FILTER_OPTIONS, MODULE_FILTER_OPTIONS } from '../../utils/constants';
 
 export default function EnquiriesAdminPage() {
   const [page, setPage]                   = useState(1);
@@ -185,56 +152,56 @@ export default function EnquiriesAdminPage() {
       width: 200,
       render: (_, record) => (
         <Space wrap>
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => navigate(`/enquiries/${record.enquiry_id}`)}
-          >
-            View
-          </Button>
-          {/* PERMISSION enquiries: open the full permissions manager with highlights */}
-          {record.module_type === 'PERMISSION' && record.status !== 'RESOLVED' && (
+          <Tooltip title="View" mouseEnterDelay={3}>
             <Button
               size="small"
-              icon={<SafetyOutlined />}
-              type="primary"
-              ghost
-              onClick={() => openPermissionsForEnquiry(record)}
-            >
-              Grant
-            </Button>
+              icon={<EyeOutlined />}
+              onClick={() => navigate(`/enquiries/${record.enquiry_id}`)}
+            />
+          </Tooltip>
+          {/* PERMISSION enquiries: open the full permissions manager with highlights */}
+          {record.module_type === 'PERMISSION' && record.status === 'IN_PROGRESS' && (
+            <Tooltip title="Grant Permissions" mouseEnterDelay={3}>
+              <Button
+                size="small"
+                icon={<SafetyOutlined />}
+                type="primary"
+                ghost
+                onClick={() => openPermissionsForEnquiry(record)}
+              />
+            </Tooltip>
           )}
           {record.status === 'OPEN' && (
-            <Button
-              size="small"
-              icon={<SyncOutlined />}
-              type="primary"
-              ghost
-              loading={updatingStatus}
-              onClick={() => handleStatusChange(record.enquiry_id, 'IN_PROGRESS')}
-            >
-              Start
-            </Button>
+            <Tooltip title="Start Enquiry" mouseEnterDelay={3}>
+              <Button
+                size="small"
+                icon={<SyncOutlined />}
+                type="primary"
+                ghost
+                loading={updatingStatus}
+                onClick={() => handleStatusChange(record.enquiry_id, 'IN_PROGRESS')}
+              />
+            </Tooltip>
           )}
           {record.status === 'IN_PROGRESS' && (
             <>
-              <Button
-                size="small"
-                icon={<MessageOutlined />}
-                type="primary"
-                onClick={() => openRespondModal(record)}
-              >
-                Respond
-              </Button>
-              <Button
-                size="small"
-                icon={<CheckCircleOutlined />}
-                className="btn-resolve"
-                loading={updatingStatus}
-                onClick={() => handleStatusChange(record.enquiry_id, 'RESOLVED')}
-              >
-                Resolve
-              </Button>
+              <Tooltip title="Respond" mouseEnterDelay={3}>
+                <Button
+                  size="small"
+                  icon={<MessageOutlined />}
+                  type="primary"
+                  onClick={() => openRespondModal(record)}
+                />
+              </Tooltip>
+              <Tooltip title="Resolve" mouseEnterDelay={3}>
+                <Button
+                  size="small"
+                  icon={<CheckCircleOutlined />}
+                  className="btn-resolve"
+                  loading={updatingStatus}
+                  onClick={() => handleStatusChange(record.enquiry_id, 'RESOLVED')}
+                />
+              </Tooltip>
             </>
           )}
         </Space>

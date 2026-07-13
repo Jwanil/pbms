@@ -1,3 +1,4 @@
+import './DashboardPage.css';
 import { Row, Col, Card, Statistic, Table, Tag, Spin, Typography, Empty } from 'antd';
 import {
   ShoppingOutlined, BankOutlined, TeamOutlined, LinkOutlined,
@@ -9,27 +10,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const { Title, Text } = Typography;
 
-// Color palette for stat cards
-const STAT_CARDS = [
-  { key: 'totalProducts', title: 'Active Products', icon: <ShoppingOutlined />, color: '#1890ff', bg: '#e6f7ff' },
-  { key: 'totalCompanies', title: 'Active Companies', icon: <BankOutlined />, color: '#52c41a', bg: '#f6ffed' },
-  { key: 'totalContacts', title: 'Active Contacts', icon: <TeamOutlined />, color: '#fa8c16', bg: '#fff7e6' },
-  { key: 'activeMappings', title: 'Active Mappings', icon: <LinkOutlined />, color: '#722ed1', bg: '#f9f0ff' },
-];
-
-// Colors for company type chart bars
-const TYPE_COLORS = {
-  MANUFACTURER: '#1890ff',
-  SUPPLIER: '#52c41a',
-  BUYER: '#fa8c16',
-  DISTRIBUTOR: '#722ed1',
-};
-
-const ACTION_COLORS = {
-  CREATE: 'green',
-  UPDATE: 'blue',
-  DELETE: 'red',
-};
+import { STAT_CARDS, TYPE_COLORS, ACTION_COLORS } from '../../utils/constants';
 
 function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
@@ -75,22 +56,19 @@ function DashboardPage() {
       />
 
       {/* KPI Stat Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      <Row gutter={[16, 16]} className="db-kpi-row">
         {STAT_CARDS.map((card) => (
           <Col xs={24} sm={12} lg={6} key={card.key}>
             <Card
               variant="borderless"
-              style={{
-                borderRadius: 12,
-                background: card.bg,
-                borderLeft: `4px solid ${card.color}`,
-              }}
+              className="db-stat-card"
+              style={{ background: card.bg, borderLeft: `4px solid ${card.color}` }}
             >
               <Statistic
-                title={<span style={{ color: '#595959', fontSize: 14 }}>{card.title}</span>}
+                title={<span className="db-stat-title">{card.title}</span>}
                 value={statsLoading ? '...' : (stats?.[card.key] ?? 0)}
-                prefix={<span style={{ color: card.color, fontSize: 24 }}>{card.icon}</span>}
-                valueStyle={{ color: card.color, fontWeight: 700, fontSize: 28 }}
+                prefix={<span className="db-stat-icon" style={{ color: card.color }}>{card.icon ? <card.icon /> : null}</span>}
+                valueStyle={{ color: card.color }}
               />
             </Card>
           </Col>
@@ -101,12 +79,12 @@ function DashboardPage() {
         {/* Companies by Type */}
         <Col xs={24} lg={8}>
           <Card
-            title={<span style={{ fontWeight: 600 }}>Companies by Type</span>}
+            title={<span className="db-card-title">Companies by Type</span>}
             variant="borderless"
-            style={{ borderRadius: 12, height: '100%' }}
+            className="db-card--full-height"
           >
             {statsLoading ? (
-              <div style={{ textAlign: 'center', padding: 40 }}><Spin /></div>
+              <div className="db-spin-center"><Spin /></div>
             ) : (stats?.companiesByType || []).length === 0 ? (
               <Empty description="No companies yet" />
             ) : (
@@ -114,20 +92,19 @@ function DashboardPage() {
                 {(stats?.companiesByType || []).map((group) => {
                   const percentage = totalByType > 0 ? Math.round((group.count / totalByType) * 100) : 0;
                   return (
-                     <div key={group.type} style={{ marginBottom: 16 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                     <div key={group.type} className="db-type-group">
+                      <div className="db-type-label-row">
                         <Text>{group.type}</Text>
                         <Text strong>{group.count} ({percentage}%)</Text>
                       </div>
-                      <div style={{
-                        height: 8, borderRadius: 4, background: '#f0f0f0',
-                      }}>
-                        <div style={{
-                          height: '100%', borderRadius: 4,
-                          width: `${percentage}%`,
-                          background: TYPE_COLORS[group.type] || '#1890ff',
-                          transition: 'width 0.5s ease',
-                        }} />
+                      <div className="db-progress-track">
+                        <div
+                          className="db-progress-fill"
+                          style={{
+                            width: `${percentage}%`,
+                            background: TYPE_COLORS[group.type] || '#1890ff',
+                          }}
+                        />
                       </div>
                     </div>
                   );
@@ -141,13 +118,13 @@ function DashboardPage() {
         <Col xs={24} lg={16}>
           <Card
             title={
-              <span style={{ fontWeight: 600 }}>
-                <ClockCircleOutlined style={{ marginRight: 8 }} />
+              <span className="db-card-title">
+                <ClockCircleOutlined className="db-card-title-icon" />
                 Recent Activities
               </span>
             }
             variant="borderless"
-            style={{ borderRadius: 12 }}
+            className="db-card"
           >
             <Table
               columns={activityColumns}
@@ -169,10 +146,10 @@ function DashboardPage() {
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      <Row gutter={[16, 16]} className="db-charts-row">
         <Col xs={24} lg={12}>
-          <Card title="Product Additions (Last 6 Months)" variant="borderless" style={{ borderRadius: 12 }}>
-            <div style={{ height: 300 }}>
+          <Card title="Product Additions (Last 6 Months)" variant="borderless" className="db-card">
+            <div className="db-chart-wrapper">
               {statsLoading ? <Spin /> : (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={stats?.productTrends || []}>
@@ -189,7 +166,7 @@ function DashboardPage() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="Top Companies (By Branches)" variant="borderless" style={{ borderRadius: 12 }}>
+          <Card title="Top Companies (By Branches)" variant="borderless" className="db-card">
             <Table
               columns={topCompaniesColumns}
               dataSource={stats?.topCompanies || []}

@@ -23,7 +23,7 @@
 /* ── Requested permission highlight wrapper ── */
 .perm-request-highlight {
   display: inline-block;
-  border: 2px solid #faad14;
-  border-radius: 14px;
-  padding: 1px 3px;
+  background-color: #e6f4ff;
+  border-radius: 6px;
+  padding: 4px 6px;
 }

@@ -4,20 +4,7 @@ import { Modal, Table, Switch, Button, Spin, Alert, Badge, Tooltip } from 'antd'
 import { SaveOutlined } from '@ant-design/icons';
 import { useUserPermissions, useUpdateUserPermissions } from '../api/userPermissionsApi';
 
-const MODULE_LABELS = {
-  products:           'Products',
-  companies:          'Companies',
-  mappings:           'Product Mapping',
-  contacts:           'Contacts',
-  packaging:          'Packaging',
-  categories:         'Categories',
-  departments:        'Departments',
-  grades:             'Grades',
-  users:              'User Management',
-  roles:              'Roles & Rights',
-  dashboard:          'Dashboard',
-  locations_countries:'Locations',
-};
+import { MODULE_LABELS } from '../utils/constants';
 
 /**
  * UserPermissionsModal
@@ -124,8 +111,8 @@ function UserPermissionsModal({ open, onClose, userId, userName, highlightedPerm
         onChange={(val) => handleToggle(index, field, val)}
         size="small"
         disabled={disabled}
-        // Amber tint when the switch was part of the request
-        style={requested && record[field] ? { backgroundColor: '#faad14' } : undefined}
+        // Light blue tint when the switch was part of the request
+        style={requested && record[field] ? { backgroundColor: '#1677ff' } : undefined}
       />
     );
 
@@ -148,7 +135,7 @@ function UserPermissionsModal({ open, onClose, userId, userName, highlightedPerm
         const hasRequest = !!requestedMap[record.module_name];
         return (
           <span className={hasRequest ? 'perm-module-name perm-module-name--requested' : 'perm-module-name'}>
-            {hasRequest && <Badge status="warning" className="perm-request-badge" />}
+            {hasRequest && <Badge status="processing" className="perm-request-badge" />}
             {MODULE_LABELS[val] || val}
           </span>
         );
@@ -176,7 +163,7 @@ function UserPermissionsModal({ open, onClose, userId, userName, highlightedPerm
     <Modal
       title={
         highlightedPermissions?.length
-          ? `Grant Permissions — ${userName}  (🟡 = requested)`
+          ? `Grant Permissions — ${userName}  (🔵 = requested)`
           : `Permissions — ${userName}`
       }
       open={open}
@@ -198,10 +185,10 @@ function UserPermissionsModal({ open, onClose, userId, userName, highlightedPerm
     >
       {highlightedPermissions?.length > 0 && (
         <Alert
-          type="warning"
+          type="info"
           showIcon
           className="perm-save-btn"
-          message="🟡 Highlighted rows show what the user requested. Review, adjust if needed, then Save."
+          message="🔵 Highlighted areas show what the user requested. Review, adjust if needed, then Save."
         />
       )}
 

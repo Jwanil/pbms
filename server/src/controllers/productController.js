@@ -41,7 +41,7 @@ const productSchema = z.object({
 
 const getProductsController = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, search = '', category_id, grade_id, status:status_flag } = req.query;
+    const { page = 1, limit = 20, search = '', category_id, grade_id, status: status_flag } = req.query;
     const result = await productService.getProducts({
       page: parseInt(page), limit: parseInt(limit), search, category_id, grade_id, status: status_flag
     });
@@ -133,7 +133,7 @@ const Papa = require('papaparse');
 const exportProductsController = async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
-      where: { status: status_flag },
+      where: { status_flag: 0 },
       select: {
         product_name: true,
         sku: true,

@@ -16,31 +16,7 @@ import { useProducts } from '../../api/productsApi';
 import { useMappings } from '../../api/mappingsApi';
 import { Checkbox, Table as AntTable, message } from 'antd';
 
-const ALL_MODULES = [
-  'products', 'companies', 'mappings', 'contacts',
-  'categories', 'grades', 'packaging', 'departments',
-  'users', 'locations_countries'
-];
-
-const ACTION_LABELS = {
-  can_view:   'View',
-  can_create: 'Create',
-  can_edit:   'Edit',
-  can_delete: 'Delete',
-};
-
-// All possible modules
-const ALL_MODULE_OPTIONS = [
-  { value: 'PRODUCT',    label: 'Product',                         permKey: 'products' },
-  { value: 'COMPANY',    label: 'Company',                         permKey: 'companies' },
-  { value: 'MAPPING',    label: 'Mapping',                         permKey: 'mappings' },
-  { value: 'PERMISSION', label: 'Permissions',                     permKey: null },
-  { value: 'ROLE',       label: 'Roles',                           permKey: null },
-  { value: 'MASTERS',    label: 'Masters (Categories, Grades, etc.)', permKey: null },
-];
-
-// Modules where user must pick a specific record
-const MODULES_WITH_RECORDS = ['PRODUCT', 'COMPANY', 'MAPPING'];
+import { ALL_MODULES, ACTION_LABELS, ALL_MODULE_OPTIONS, MODULES_WITH_RECORDS } from '../../utils/constants';
 // { module_name: { can_view: bool, can_create: bool, ... } }
 
 export default function EnquiryForm() {
@@ -53,29 +29,29 @@ export default function EnquiryForm() {
   const { applyServerErrors } = useFormErrors(form);
 
 
-// Is this permission already granted? → disable the checkbox
-const alreadyHas = (moduleName, action) =>
+  // Is this permission already granted? → disable the checkbox
+  const alreadyHas = (moduleName, action) =>
     !!permissions?.[moduleName]?.[action];
 
-// Toggle a checkbox in the draft
-const togglePerm = (moduleName, action, checked) => {
+  // Toggle a checkbox in the draft
+  const togglePerm = (moduleName, action, checked) => {
     setPermissionDraft(prev => ({
-        ...prev,
-        [moduleName]: { ...prev[moduleName], [action]: checked },
+      ...prev,
+      [moduleName]: { ...prev[moduleName], [action]: checked },
     }));
-};
+  };
 
-// Convert draft object → array format for the API
-const buildRequestedPermissions = () =>
+  // Convert draft object → array format for the API
+  const buildRequestedPermissions = () =>
     Object.entries(permissionDraft)
-        .filter(([, actions]) => Object.values(actions).some(Boolean))
-        .map(([module, actions]) => ({ module, ...actions }));
+      .filter(([, actions]) => Object.values(actions).some(Boolean))
+      .map(([module, actions]) => ({ module, ...actions }));
 
   // Read permissions from auth store — same source as roleGuard on the backend
   const permissions = useAuthStore((state) => state.permissions);
-  const canViewProducts  = !!permissions?.products?.can_view;
+  const canViewProducts = !!permissions?.products?.can_view;
   const canViewCompanies = !!permissions?.companies?.can_view;
-  const canViewMappings  = !!permissions?.mappings?.can_view;
+  const canViewMappings = !!permissions?.mappings?.can_view;
 
   // Filter module options based on what the user can actually see
   const moduleOptions = ALL_MODULE_OPTIONS.filter(
@@ -83,9 +59,9 @@ const buildRequestedPermissions = () =>
   );
 
   // Only fetch data if user has the matching permission — prevents 403 errors
-  const { data: productsData }  = useProducts({ limit: 999, enabled: canViewProducts });
+  const { data: productsData } = useProducts({ limit: 999, enabled: canViewProducts });
   const { data: companiesData } = useCompanies({ limit: 999, enabled: canViewCompanies });
-  const { data: mappingsData }  = useMappings({ limit: 999, enabled: canViewMappings });
+  const { data: mappingsData } = useMappings({ limit: 999, enabled: canViewMappings });
 
   const handleModuleChange = (value) => {
     setSelectedModule(value);
@@ -110,23 +86,23 @@ const buildRequestedPermissions = () =>
     const payload = { ...values };
 
     if (values.module_type === 'PERMISSION') {
-        const requested = buildRequestedPermissions();
-        if (requested.length === 0) {
-            message.error('Please select at least one permission to request');
-            return;
-        }
-        payload.requested_permissions = requested;
+      const requested = buildRequestedPermissions();
+      if (requested.length === 0) {
+        message.error('Please select at least one permission to request');
+        return;
+      }
+      payload.requested_permissions = requested;
     }
 
     submit(payload, {
-        onSuccess: () => {
-            form.resetFields();
-            setSelectedModule(null);
-            setPermissionDraft({});   // ← reset picker
-        },
-        onError: (err) => applyServerErrors(err),
+      onSuccess: () => {
+        form.resetFields();
+        setSelectedModule(null);
+        setPermissionDraft({});   // ← reset picker
+      },
+      onError: (err) => applyServerErrors(err),
     });
-};
+  };
 
 
   return (
@@ -155,7 +131,7 @@ const buildRequestedPermissions = () =>
           >
             <Input placeholder="Short title for your enquiry" />
           </Form.Item>
-          
+
           <Form.Item
             name="module_type"
             label="What is your enquiry about?"
@@ -188,24 +164,24 @@ const buildRequestedPermissions = () =>
               />
             </Form.Item>
           )}
-          
+
           {selectedModule === 'PERMISSION' && (
             <Form.Item
-                label="Permissions to Request"
-                required
-                help={
-                    buildRequestedPermissions().length > 0
-                        ? `${buildRequestedPermissions().length} module(s) with new permissions selected`
-                        : 'Click the button below to pick which permissions you need'
-                }
+              label="Permissions to Request"
+              required
+              help={
+                buildRequestedPermissions().length > 0
+                  ? `${buildRequestedPermissions().length} module(s) with new permissions selected`
+                  : 'Click the button below to pick which permissions you need'
+              }
             >
-                <Button onClick={() => setPickerOpen(true)}>
-                    {buildRequestedPermissions().length > 0
-                        ? 'Edit Permission Request'
-                        : 'Select Permissions →'}
-                </Button>
+              <Button onClick={() => setPickerOpen(true)}>
+                {buildRequestedPermissions().length > 0
+                  ? 'Edit Permission Request'
+                  : 'Select Permissions →'}
+              </Button>
             </Form.Item>
-        )}
+          )}
 
           <Form.Item
             name="description"
@@ -239,41 +215,49 @@ const buildRequestedPermissions = () =>
         onCancel={() => setPickerOpen(false)}
         okText="Done"
         width={680}
-    >
+      >
         <AntTable
-            dataSource={ALL_MODULES.map(m => ({ key: m, module: m }))}
-            pagination={false}
-            size="small"
-            columns={[
-                {
-                    title: 'Module',
-                    dataIndex: 'module',
-                    render: (m) => (
-                        <span className="module-name-capitalize">
-                            {m.replace(/_/g, ' ')}
-                        </span>
-                    ),
-                },
-                ...Object.entries(ACTION_LABELS).map(([action, label]) => ({
-                    title: label,
-                    key: action,
-                    width: 80,
-                    align: 'center',
-                    render: (_, row) => {
-                        const has     = alreadyHas(row.module, action);
-                        const checked = has || !!permissionDraft[row.module]?.[action];
-                        return (
-                            <Checkbox
-                                checked={checked}
-                                disabled={has}
-                                onChange={(e) => togglePerm(row.module, action, e.target.checked)}
-                            />
-                        );
-                    },
-                })),
-            ]}
+          dataSource={ALL_MODULES.map(m => ({ key: m, module: m }))}
+          pagination={false}
+          size="small"
+          columns={[
+            {
+              title: 'Module',
+              dataIndex: 'module',
+              render: (m) => (
+                <span className="module-name-capitalize">
+                  {m.replace(/_/g, ' ')}
+                </span>
+              ),
+            },
+            ...Object.entries(ACTION_LABELS).map(([action, label]) => ({
+              title: label,
+              key: action,
+              width: 80,
+              align: 'center',
+              render: (_, row) => {
+                const has = alreadyHas(row.module, action);
+                const isRequested = !!permissionDraft[row.module]?.[action];
+                const checked = has || isRequested;
+                return (
+                  <div style={{
+                    padding: '4px',
+                    backgroundColor: isRequested ? '#e6f4ff' : 'transparent',
+                    borderRadius: '4px',
+                    transition: 'background-color 0.3s'
+                  }}>
+                    <Checkbox
+                      checked={checked}
+                      disabled={has}
+                      onChange={(e) => togglePerm(row.module, action, e.target.checked)}
+                    />
+                  </div>
+                );
+              },
+            })),
+          ]}
         />
-    </Modal>
+      </Modal>
     </div>
   );
 }

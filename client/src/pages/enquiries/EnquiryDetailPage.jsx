@@ -18,23 +18,7 @@ import PageHeader from '../../components/PageHeader';
 
 const { Text, Paragraph } = Typography;
 
-const MODULE_LABELS = {
-  PRODUCT:    'Product',
-  COMPANY:    'Company',
-  MAPPING:    'Mapping',
-  PERMISSION: 'Permissions',
-  ROLE:       'Roles',
-  MASTERS:    'Masters',
-};
-
-const MODULE_COLORS = {
-  PRODUCT:    'blue',
-  COMPANY:    'purple',
-  MAPPING:    'cyan',
-  PERMISSION: 'orange',
-  ROLE:       'red',
-  MASTERS:    'green',
-};
+import { MODULE_LABELS, MODULE_COLORS } from '../../utils/constants';
 
 export default function EnquiryDetailPage() {
   const { id } = useParams();
@@ -111,40 +95,44 @@ export default function EnquiryDetailPage() {
         </Descriptions>
 
         <Divider orientation="left">Description</Divider>
-        {enquiry.module_type === 'PERMISSION' && enquiry.requested_permissions?.length > 0 && 
-        (
-          <>
-              <Divider orientation="left">Requested Permissions</Divider>
-              <Table
-                  dataSource={enquiry.requested_permissions.map(r => ({ ...r, key: r.module }))}
-                  pagination={false}
-                  size="small"
-                  columns={[
-                      {
-                          title: 'Module',
-                          dataIndex: 'module',
-                          render: (m) => (
-                              <span className="module-name-capitalize">
-                                  {m.replace(/_/g, ' ')}
-                              </span>
-                          ),
-                      },
-                      ...['can_view', 'can_create', 'can_edit', 'can_delete'].map(a => ({
-                          title: a.replace('can_', '').replace(/^\w/, c => c.toUpperCase()),
-                          dataIndex: a,
-                          align: 'center',
-                          render: (v) => v
-                              ? <Tag color="blue">✓ Yes</Tag>
-                              : <Tag color="default">—</Tag>,
-                      })),
-                  ]}
-              />
-          </>
-      )}
-
-        <Paragraph className="enquiry-description">
+        <Paragraph className="enquiry-description" style={{ padding: '0 24px', fontSize: '15px', color: '#555', whiteSpace: 'pre-wrap' }}>
           {enquiry.description}
         </Paragraph>
+
+        {enquiry.module_type === 'PERMISSION' && enquiry.requested_permissions?.length > 0 && 
+        (
+          <div style={{ marginTop: 24, marginBottom: 24 }}>
+              <Divider orientation="left">Requested Permissions</Divider>
+              <div style={{ padding: '0 24px' }}>
+                <Table
+                    dataSource={enquiry.requested_permissions.map(r => ({ ...r, key: r.module }))}
+                    pagination={false}
+                    size="small"
+                    bordered
+                    style={{ maxWidth: 800 }}
+                    columns={[
+                        {
+                            title: 'Module',
+                            dataIndex: 'module',
+                            render: (m) => (
+                                <span className="module-name-capitalize" style={{ fontWeight: 600 }}>
+                                    {m.replace(/_/g, ' ')}
+                                </span>
+                            ),
+                        },
+                        ...['can_view', 'can_create', 'can_edit', 'can_delete'].map(a => ({
+                            title: a.replace('can_', '').replace(/^\w/, c => c.toUpperCase()),
+                            dataIndex: a,
+                            align: 'center',
+                            render: (v) => v
+                                ? <Tag color="blue">✓ Yes</Tag>
+                                : <Tag color="default">—</Tag>,
+                        })),
+                    ]}
+                />
+              </div>
+          </div>
+        )}
 
         {enquiry.response && (
           <>

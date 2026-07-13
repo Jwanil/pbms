@@ -3,102 +3,86 @@ import './styles/AppLayout.css';
 import { Layout, Menu, Typography, Avatar, Dropdown, Space } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
-  DashboardOutlined, AppstoreOutlined, BankOutlined,
-  SwapOutlined, ContactsOutlined, TagsOutlined,
-  UserOutlined, SafetyOutlined, DownOutlined,
-  MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined,
-  QuestionCircleOutlined,
+  MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined, UserOutlined, DownOutlined,
 } from '@ant-design/icons';
 import useAuthStore from '../store/authStore';
+import useLayoutStore from '../store/useLayoutStore';
 import { useLogout } from '../api/authApi';
+import { routes } from '../router';
 
 const { Sider, Header, Content } = Layout;
 const { Text } = Typography;
 
-const menuItems = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/products', icon: <AppstoreOutlined />, label: 'Products' },
-  { key: '/companies', icon: <BankOutlined />, label: 'Companies' },
-  { key: '/mapping', icon: <SwapOutlined />, label: 'Product Mapping' },
-  { key: '/contacts', icon: <ContactsOutlined />, label: 'Contacts' },
-  {
-    key: 'masters',
-    icon: <TagsOutlined />,
-    label: 'Masters',
-    children: [
-      { key: '/masters/categories', label: 'Categories' },
-      { key: '/masters/grades', label: 'Grades' },
-      { key: '/masters/packaging', label: 'Packaging' },
-      { key: '/masters/departments', label: 'Departments' },
-      { key: '/masters/locations', label: 'Locations' },
-    ],
-  },
-  { key: '/users', icon: <UserOutlined />, label: 'Users' },
-  {
-    key: 'enquiries',
-    icon: <QuestionCircleOutlined />,
-    label: 'Enquiries',
-    children: [
-      { key: '/enquiries/new', label: 'New Enquiry' },
-      { key: '/enquiries/mine', label: 'My Queries' },
-      { key: '/enquiries/admin', label: 'All Enquiries' },
-    ],
-  },
-];
+/**
+ * Builds the Ant Design Menu `items` array from the route config.
+ *
+ * Logic:
+ *  1. Walk the authenticated shell's children (routes[1].children).
+ *  2. Skip routes with showInNav = false.
+ *  3. Apply role filtering (adminOnly / userOnly).
+ *  4. Apply permission filtering (route.module → permissions[module].can_view).
+ *  5. Group routes with the same `group` key under a single submenu.
+ */
+function buildMenuItems(routeChildren, permissions, userRole) {
+  const isSuperAdmin = userRole === 'SUPER_ADMIN';
 
-// Map each sidebar menu key to its permission module name
-const ROUTE_MODULE_MAP = {
-  '/dashboard': 'dashboard',
-  '/products': 'products',
-  '/companies': 'companies',
-  '/mapping': 'mappings',
-  '/contacts': 'contacts',
-  '/masters/categories': 'categories',
-  '/masters/grades': 'grades',
-  '/masters/packaging': 'packaging',
-  '/masters/departments': 'departments',
-  '/masters/locations': 'locations_countries',
-  '/users': 'users',
+  // Collect visible leaf routes
+  const visibleRoutes = routeChildren.filter((r) => {
+    if (!r.showInNav) return false;
+    if (r.adminOnly && !isSuperAdmin) return false;
+    if (r.userOnly && isSuperAdmin) return false;
+    if (r.module && !permissions?.[r.module]?.can_view) return false;
+    return true;
+  });
 
-};
+  const items = [];
+  const groupsSeen = new Set();
 
-// Filter menu items based on user permissions
-const filterMenuItems = (items, permissions) => {
-  return items
-    .map((item) => {
-      // If item has children (submenu like "Masters"), filter its children first
-      if (item.children) {
-        const filteredChildren = filterMenuItems(item.children, permissions);
-        // If no children remain after filtering, hide the entire submenu
-        if (filteredChildren.length === 0) return null;
-        return { ...item, children: filteredChildren };
+  for (const r of visibleRoutes) {
+    if (r.group) {
+      // Already added this group's header — just add the child
+      if (!groupsSeen.has(r.group)) {
+        groupsSeen.add(r.group);
+        // Collect all visible children for this group
+        const groupChildren = visibleRoutes
+          .filter((x) => x.group === r.group)
+          .map((x) => ({ key: `/${x.path}`, label: x.label }));
+
+        items.push({
+          key: r.group,
+          icon: r.groupIcon,
+          label: r.groupLabel,
+          children: groupChildren,
+        });
       }
+      // Child already added as part of the group — skip individual push
+    } else {
+      // Top-level menu item
+      items.push({
+        key: `/${r.path}`,
+        icon: r.icon,
+        label: r.label,
+      });
+    }
+  }
 
-      // Check permission for this item
-      const moduleName = ROUTE_MODULE_MAP[item.key];
-      if (!moduleName) return item; // No mapping = always show (safety fallback)
-
-      // Only show if user has can_view for this module
-      return permissions?.[moduleName]?.can_view ? item : null;
-    })
-    .filter(Boolean);
-};
-
-
-
+  return items;
+}
 
 function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
+  const { pageTitle, pageBreadcrumbs } = useLayoutStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, permissions } = useAuthStore();
   const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
-  const handleMenuClick = ({ key }) => navigate(key);
+  // The authenticated shell is always routes[1]; its children hold page routes
+  const authChildren = routes[1]?.children ?? [];
+  const menuItems = buildMenuItems(authChildren, permissions, user?.role);
 
-  const handleLogout = () => {
-    logout();
-  };
+  const handleMenuClick = ({ key }) => navigate(key);
+  const handleLogout = () => logout();
 
   const userMenuItems = [
     {
@@ -117,20 +101,6 @@ function AppLayout() {
     },
   ];
 
-  const visibleMenuItems = filterMenuItems(menuItems, permissions).map(item => {
-    if (item.key === 'enquiries') {
-      const children = item.children.filter(child => {
-        if (child.key === '/enquiries/admin' && user?.role !== 'SUPER_ADMIN') return false;
-        if (child.key === '/enquiries/new' && user?.role === 'SUPER_ADMIN') return false;
-        if (child.key === '/enquiries/mine' && user?.role === 'SUPER_ADMIN') return false;
-        return true;
-      });
-      return { ...item, children }; 
-    }
-
-    return item;
-  });
-
   return (
     <Layout className="app-layout">
       <Sider collapsible collapsed={collapsed} trigger={null} width={240} theme="dark">
@@ -144,8 +114,8 @@ function AppLayout() {
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
-          defaultOpenKeys={['masters']}
-          items={visibleMenuItems}
+          defaultOpenKeys={['masters', 'enquiries']}
+          items={menuItems}
           onClick={handleMenuClick}
           className="app-sidebar-menu"
         />
@@ -153,11 +123,21 @@ function AppLayout() {
 
       <Layout>
         <Header className="app-header">
-          <div
-            onClick={() => setCollapsed(!collapsed)}
-            className="app-header__collapse-btn"
-          >
-            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <div
+              onClick={() => setCollapsed(!collapsed)}
+              className="app-header__collapse-btn"
+            >
+              {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            </div>
+
+            {pageTitle && (
+              <div className="app-header__page-title">
+                <Typography.Title level={5} style={{ margin: 0, color: '#1F3A6E', fontWeight: 600 }}>
+                  {pageBreadcrumbs.length > 0 ? pageBreadcrumbs.join(' / ') : pageTitle}
+                </Typography.Title>
+              </div>
+            )}
           </div>
 
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']}>

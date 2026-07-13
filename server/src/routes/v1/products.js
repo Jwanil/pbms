@@ -157,8 +157,8 @@ router.patch('/:id/deactivate', verifyToken, roleGuard('products', 'can_delete')
 router.patch('/:id/reactivate', verifyToken, roleGuard('products', 'can_edit'), reactivateProductController);
 
 // products.js
-router.delete('/:id',           verifyToken, roleGuard('products', 'can_delete'), deleteProductController);
-router.patch('/:id/deactivate', verifyToken, roleGuard('products', 'can_edit'),   deactivateProductController);
-router.patch('/:id/reactivate', verifyToken, roleGuard('products', 'can_edit'),   reactivateProductController);
+router.delete('/:id', verifyToken, roleGuard('products', 'can_delete'), deleteProductController);
+router.patch('/:id/deactivate', verifyToken, roleGuard('products', 'can_edit'), deactivateProductController);
+router.patch('/:id/reactivate', verifyToken, roleGuard('products', 'can_edit'), reactivateProductController);
 
 module.exports = router;

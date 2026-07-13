@@ -1,0 +1,85 @@
+/* ─── KPI Row ─────────────────────────────────────────────────── */
+.db-kpi-row {
+  margin-bottom: 24px;
+}
+
+/* ─── Stat Cards ──────────────────────────────────────────────── */
+.db-stat-card {
+  border-radius: 12px;
+  /* background and border-left remain inline (dynamic per card) */
+}
+
+.db-stat-title {
+  color: #595959;
+  font-size: 14px;
+}
+
+.db-stat-icon {
+  font-size: 24px;
+  /* color remains inline (dynamic per card) */
+}
+
+/* ─── Generic Panel Card ─────────────────────────────────────── */
+.db-card {
+  border-radius: 12px;
+}
+
+.db-card--full-height {
+  border-radius: 12px;
+  height: 100%;
+}
+
+/* ─── Section card title (bold header text) ─────────────────── */
+.db-card-title {
+  font-weight: 600;
+}
+
+.db-card-title-icon {
+  margin-right: 8px;
+}
+
+/* ─── Loading spinner wrapper ───────────────────────────────── */
+.db-spin-center {
+  text-align: center;
+  padding: 40px;
+}
+
+/* ─── Companies by Type: progress bars ─────────────────────── */
+.db-type-group {
+  margin-bottom: 16px;
+}
+
+.db-type-label-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.db-progress-track {
+  height: 8px;
+  border-radius: 4px;
+  background: #f0f0f0;
+}
+
+.db-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  /* width and background remain inline (dynamic per group) */
+}
+
+/* ─── Charts section row ─────────────────────────────────────── */
+.db-charts-row {
+  margin-top: 16px;
+}
+
+/* ─── Chart container ────────────────────────────────────────── */
+.db-chart-wrapper {
+  height: 300px;
+}
+
+/* ─── Statistic Value Styles ─────────────────────────────────── */
+.db-stat-card .ant-statistic-content {
+  font-weight: 700 !important;
+  font-size: 28px !important;
+}
